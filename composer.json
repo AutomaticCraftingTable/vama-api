@@ -1,7 +1,7 @@
 {
     "name": "act/vama",
     "type": "project",
-    "description": "vama project.",
+    "description": "vama-api",
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "require": {
@@ -13,10 +13,11 @@
         "laravel/tinker": "^2.9"
     },
     "require-dev": {
-        "blumilksoftware/codestyle": "^v3.0.0",
         "fakerphp/faker": "^1.23.0",
+        "friendsofphp/php-cs-fixer": "^3.70",
+        "larastan/larastan": "^2.9",
         "nunomaduro/collision": "^8.1",
-        "nunomaduro/larastan": "^2.6.4",
+        "phpstan/phpstan": "^1.12",
         "phpunit/phpunit": "^11.0.8",
         "spatie/laravel-ignition": "^2.4"
     },
@@ -51,8 +52,8 @@
             "@php artisan test"
         ],
         "analyse": "./vendor/bin/phpstan analyse",
-        "cs": "./vendor/bin/php-cs-fixer fix --dry-run --diff --config codestyle.php",
-        "csf": "./vendor/bin/php-cs-fixer fix --diff --config codestyle.php"
+        "cs": "php-cs-fixer fix --dry-run --diff --config codestyle.php",
+        "csf": "php-cs-fixer fix --diff --config codestyle.php"
     },
     "extra": {
         "laravel": {

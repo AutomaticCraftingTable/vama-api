@@ -8,14 +8,14 @@ use Tests\TestCase;
 
 class ExampleApiTest extends TestCase
 {
-  public function testHelloWorldEndpoint()
-  {
-    $response = $this->get("/api/hello");
+    public function testHelloWorldEndpoint()
+    {
+        $response = $this->get("/api/hello");
 
-    $response
-      ->assertStatus(200)
-      ->assertJson([
-        "message" => "Hello, World!",
-      ]);
-  }
+        $response
+          ->assertStatus(200)
+          ->assertJson([
+            "message" => "Hello, World!",
+          ]);
+    }
 }
