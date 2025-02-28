@@ -1,6 +1,6 @@
 ## Database scheme
 ### Visual representation
-![image](https://github.com/user-attachments/assets/28256937-ff9b-4b40-a674-932a16e6bf7c)
+![image](https://github.com/user-attachments/assets/b307f3cd-d9cc-49cf-af86-47c7d2b45dae)
 
 
 ### DBML representation
