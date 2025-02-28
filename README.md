@@ -1,3 +1,4 @@
+## vama-api
 ### Local development
 ```
 cp .env.example .env
@@ -26,10 +27,10 @@ make shell
 
 | service    | container name            | default host port               |
 |:-----------|:--------------------------|:--------------------------------|
-| `app`      | `vama-app-dev`     | [63851](http://localhost:63851) |
+| `app`      | `vama-app-dev`     | 63851                           |
 | `database` | `vama-db-dev`      | 63853                           |
 | `redis`    | `vama-redis-dev`   | 63852                           |
 | `mailpit`  | `vama-mailpit-dev` | 63854                           |
 
 ### Docs
-[db](https://github.com/AutomaticCraftingTable/vama-backend/doc/db.md)
+[db](https://github.com/AutomaticCraftingTable/vama-api/blob/main/doc/db.md)
