@@ -1,0 +1,93 @@
+networks:
+    vama-dev:
+        driver: bridge
+    traefik-proxy-vama-local:
+        external: true
+
+volumes:
+    vama-postgres-data:
+        name: vama-postgres-data
+    vama-redis-data:
+        name: vama-redis-data
+
+services:
+    app:
+        build:
+            context: ./environment/dev/app
+            dockerfile: Dockerfile
+            args:
+                - INSTALL_XDEBUG=${DOCKER_INSTALL_XDEBUG:-true}
+                - USER_ID=${DOCKER_HOST_USER_ID:-1000}
+        labels:
+            - "traefik.enable=true"
+            - "traefik.vama.environment=true"
+            # HTTP
+            - "traefik.http.routers.vama-http-router.rule=Host(`vama.localhost`)"
+            - "traefik.http.routers.vama-http-router.entrypoints=web"
+        container_name: vama-app-dev
+        working_dir: /application
+        volumes:
+            - ./environment/dev/app/nginx.conf:/etc/nginx/nginx.conf:ro
+            - ./environment/dev/app/php.ini:/usr/local/etc/php/conf.d/zzz-overrides.ini:ro
+            - ./environment/dev/app/php-fpm.conf:/usr/local/etc/php-fpm.d/zzz-overrides.conf:ro
+            - ./environment/dev/app/supervisord.conf:/etc/supervisor/custom-supervisord.conf:ro
+            - .:/application
+        ports:
+            - ${DOCKER_APP_HOST_PORT:-63851}:80
+        networks:
+            - vama-dev
+            - traefik-proxy-vama-local
+        restart: unless-stopped
+        depends_on:
+            database:
+                condition: service_healthy
+
+    database:
+        image: postgres:16.3-alpine3.18
+        container_name: vama-db-dev
+        environment:
+            - POSTGRES_USER=${DB_USERNAME}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_DATABASE}
+            - PGDATA=/var/lib/postgresql/data
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready --dbname ${DB_DATABASE} --username ${DB_USERNAME}"]
+            interval: 3s
+            timeout: 3s
+            retries: 5
+        ports:
+            - ${DOCKER_DATABASE_HOST_PORT:-63853}:5432
+        volumes:
+            - vama-postgres-data:/var/lib/postgresql/data
+        networks:
+            - vama-dev
+        restart: unless-stopped
+
+    mailpit:
+      image: axllent/mailpit:v1.18.0
+      container_name: vama-mailpit-dev
+      labels:
+        - "traefik.enable=true"
+        - "traefik.vama.environment=true"
+        # HTTP
+        - "traefik.http.routers.vama-mailpit-http-router.rule=Host(`vama-mailpit.localhost`)"
+        - "traefik.http.routers.vama-mailpit-http-router.entrypoints=web"
+        # LOADBALANCER MAILPIT PORT
+        - "traefik.http.services.vama-mailpit.loadbalancer.server.port=8025"
+      networks:
+        - vama-dev
+        - traefik-proxy-vama-local
+      ports:
+        - ${DOCKER_MAILPIT_DASHBOARD_HOST_PORT:-63854}:8025
+      restart: unless-stopped
+
+    redis:
+        image: redis:7.2.4-alpine3.19
+        container_name: vama-redis-dev
+        ports:
+            - ${DOCKER_REDIS_HOST_PORT:-63852}:6379
+        volumes:
+            - vama-redis-data:/data
+        networks:
+            - vama-dev
+        restart: unless-stopped
