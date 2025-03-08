@@ -35,4 +35,4 @@ make shell
 
 ### Dokumentacja architektury projektu
 - [Wizualizacja bazy danych](https://dbdocs.io/embed/2b2f5860e9afda4487f342359136dcbd/09cf598f70774c1aa9a302b7974c7ffd)
-- [Dokumentacja API](vama-api-doc.apidog.io)
+- [Dokumentacja API](https://vama-api-doc.apidog.io)
