@@ -1,9 +1,6 @@
 # For other versions check: https://hub.docker.com/_/composer/tags
 FROM composer/composer:2.7.6-bin as composer-bin
 
-# For other versions check: https://hub.docker.com/_/node/tags?page=1&name=bullseye-slim
-FROM node:22.1-bullseye-slim as node
-
 # For other versions check: https://hub.docker.com/_/php/tags?page=1&name=fpm-bullseye
 FROM php:8.3.7-fpm-bullseye
 

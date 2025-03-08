@@ -1,36 +1,38 @@
 ## vama-api
-### Local development
+### Lokalny rozwój
+
 ```
 cp .env.example .env
 make init
 make run
 ```
-Application will be running under [localhost:63851](localhost:63851) and [http://vama.localhost/](http://vama.localhost/) in traefik environment. If you don't have a traefik environment set up yet, follow the instructions from this [repository](https://github.com/AutomaticCraftingTable/traefik-environment).
+Aplikacja będzie dostępna pod [localhost:63851](localhost:63851) oraz [http://vama.localhost/](http://vama.localhost/). Narzędzie do SMPT testowania [http://vama-mailpit.localhost/](http://vama-mailpit.localhost/). Jeśli nie masz jeszcze skonfigurowanego środowiska Traefik, postępuj zgodnie z instrukcjami z tego [repozytorium](https://github.com/AutomaticCraftingTable/traefik-environment).
 
-#### Commands
-Before running any of the commands below, you must run shell:
+#### Polecenia
+Przed uruchomieniem któregokolwiek z poniższych poleceń należy uruchomić powłokę:
+
 ```
 make shell
 ```
 
-| Command                 | Task                                        |
-|:------------------------|:--------------------------------------------|
-| `composer <command>`    | Composer                                    |
-| `composer test`         | Runs backend tests                          |
-| `composer analyse`      | Runs Larastan analyse for backend files     |
-| `composer cs`           | Lints backend files                         |
-| `composer csf`          | Lints and fixes backend files               |
-| `php artisan <command>` | Artisan commands                            |
+| Polecenie               | Zadanie                                       |
+|:------------------------|:----------------------------------------------|
+| `composer <command>`    | Composer                                      |
+| `composer test`         | Uruchamia testy backendu                      |
+| `composer analyse`      | Wykonuje analizę Larastan dla plików backendu |
+| `composer cs`           | Lintuje pliki backendu                        |
+| `composer csf`          | Lintuje i poprawia pliki backendu             |
+| `php artisan <command>` | Polecenia Artisan                             |
+
+#### Kontenery
+| Usługa     | Nazwa kontenera          | Domyślny port hosta             |
+|:-----------|:-------------------------|:--------------------------------|
+| `app`      | `vama-app-dev`           | 63851                           |
+| `database` | `vama-db-dev`            | 63853                           |
+| `redis`    | `vama-redis-dev`         | 63852                           |
+| `mailpit`  | `vama-mailpit-dev`       | 63854                           |
 
 
-#### Containers
-
-| service    | container name            | default host port               |
-|:-----------|:--------------------------|:--------------------------------|
-| `app`      | `vama-app-dev`     | 63851                           |
-| `database` | `vama-db-dev`      | 63853                           |
-| `redis`    | `vama-redis-dev`   | 63852                           |
-| `mailpit`  | `vama-mailpit-dev` | 63854                           |
-
-### Docs
-[db](https://github.com/AutomaticCraftingTable/vama-api/blob/main/doc/db.md)
+### Dokumentacja architektury projektu
+- [Wizualizacja bazy danych](https://dbdocs.io/embed/2b2f5860e9afda4487f342359136dcbd/09cf598f70774c1aa9a302b7974c7ffd)
+- [Dokumentacja API](https://vama-api-doc.apidog.io)

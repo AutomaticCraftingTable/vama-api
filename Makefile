@@ -32,7 +32,7 @@ build:
 	docker compose --file ${DOCKER_COMPOSE_FILE} build --pull
 
 run:
-	docker compose --file ${DOCKER_COMPOSE_FILE} up
+	docker compose --file ${DOCKER_COMPOSE_FILE} up --remove-orphans
 
 stop:
 	docker compose --file ${DOCKER_COMPOSE_FILE} stop
