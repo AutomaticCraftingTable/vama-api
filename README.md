@@ -27,7 +27,7 @@ make shell
 #### Kontenery
 | Usługa     | Nazwa kontenera          | Domyślny port hosta             |
 |:-----------|:-------------------------|:--------------------------------|
-| `app`      | `vama-app-dev`           | 63851                           |
+| `app`      | `vama-api-dev`           | 63851                           |
 | `database` | `vama-db-dev`            | 63853                           |
 | `redis`    | `vama-redis-dev`         | 63852                           |
 | `mailpit`  | `vama-mailpit-dev`       | 63854                           |
