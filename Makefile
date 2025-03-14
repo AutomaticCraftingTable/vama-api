@@ -16,11 +16,10 @@ CURRENT_DIR = $(shell pwd)
 DATABASE_USERNAME=vama
 TEST_DATABASE_NAME=vama-test
 
-init: check-env-file
-	make build \
-    && make run \
-	&& docker compose --file ${DOCKER_COMPOSE_FILE} exec --user "${CURRENT_USER_ID}:${CURRENT_USER_GROUP_ID}" ${DOCKER_COMPOSE_APP_CONTAINER} bash "./environment/dev/scripts/init.sh" \
-	&& make create-test-db
+init: check-env-file build run
+	docker compose --file ${DOCKER_COMPOSE_FILE} exec --user "${CURRENT_USER_ID}:${CURRENT_USER_GROUP_ID}" ${DOCKER_COMPOSE_APP_CONTAINER} bash "./environment/dev/scripts/init.sh"
+	mkdir smth
+	make create-test-db
 
 check-env-file:
 	if [ ! -f ".env" ]; then \
@@ -32,7 +31,7 @@ build:
 	docker compose --file ${DOCKER_COMPOSE_FILE} build --pull
 
 run:
-	docker compose --file ${DOCKER_COMPOSE_FILE} up --remove-orphans
+	docker compose --file ${DOCKER_COMPOSE_FILE} up --remove-orphans -d
 
 stop:
 	docker compose --file ${DOCKER_COMPOSE_FILE} stop
