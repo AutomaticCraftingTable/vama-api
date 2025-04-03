@@ -24,6 +24,7 @@ $config->setFinder(
     Finder::create()
         ->in(__DIR__)
         ->exclude('vendor')
+        ->exclude('cache')
 );
 
 return $config;
