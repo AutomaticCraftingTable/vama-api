@@ -19,4 +19,4 @@ google-credentials.json
 .composer
 /public/build/
 supervisord.pid
-*.cache
+.php-cs-fixer.cache
