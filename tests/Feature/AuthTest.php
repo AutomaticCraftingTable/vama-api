@@ -65,7 +65,7 @@ class AuthTest extends TestCase
     public function test_user_can_logout()
     {
         $user = User::factory()->create([
-            'password' => Hash::make('password'), 
+            'password' => Hash::make('password'),
         ]);
 
         $token = $user->createToken('test-token')->plainTextToken;
@@ -76,5 +76,39 @@ class AuthTest extends TestCase
 
         $response->assertStatus(200)
                  ->assertJson(['message' => 'You are logged out.']);
+    }
+
+
+
+    public function test_user_can_get_selfinfo()
+    {
+        $user = User::create([
+            'name' => 'Auth User',
+            'email' => 'authuser@example.com',
+            'password' => Hash::make('password'),
+        ]);
+
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->getJson('/api/user');
+
+        $response->assertStatus(200)
+                 ->assertJsonStructure([
+                     'id',
+                     'name',
+                     'email',
+                 ])
+                 ->assertJsonFragment([
+                     'email' => 'authuser@example.com',
+                 ]);
+    }
+
+    public function test_unauthenticated_user_can_get_selfinfo()
+    {
+        $response = $this->getJson('/api/user');
+
+        $response->assertStatus(401);
     }
 }
