@@ -17,6 +17,5 @@ Route::prefix('auth')->group(function () {
     Route::get('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 });
 
-Route::get('/auth/redirect/google', [AuthController::class, 'redirectToGoogle']);
-Route::get('/auth/callback/google', [AuthController::class, 'handleGoogleCallback']);
+
 ;

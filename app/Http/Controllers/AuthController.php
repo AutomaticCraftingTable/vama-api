@@ -67,14 +67,24 @@ class AuthController extends Controller
     {
         $googleUser = Socialite::driver('google')->user();
 
-        $user = User::updateOrCreate(
-            ['email' => $googleUser->getEmail()],
-            [
+        $existingUser = User::where('email', $googleUser->getEmail())->first();
+
+        if ($existingUser) {
+            if ($existingUser->google_id === null) {
+                return response()->json([
+                    'message' => 'This email is already registered. Please log in with email and password.',
+                ], 409);
+            }
+
+            $user = $existingUser;
+        } else {
+            $user = User::create([
                 'name' => $googleUser->getName(),
+                'email' => $googleUser->getEmail(),
                 'password' => bcrypt(Str::random(24)),
                 'google_id' => $googleUser->getId(),
-            ]
-        );
+            ]);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
