@@ -13,18 +13,22 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $fields = $request->validate([
-            'name' => 'required|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed',
         ]);
 
-        $user = User::create($fields);
+        $user = User::create([
+            'email' => $fields['email'],
+            'password' => bcrypt($fields['password']),
+            'role' => 'user',
+            'banned_at' => null,
+        ]);
 
-        $token = $user->createToken($request->name);
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return [
             'user' => $user,
-            'token' => $token->plainTextToken,
+            'token' => $token,
         ];
     }
 
@@ -34,6 +38,7 @@ class AuthController extends Controller
             'email' => 'required|email|exists:users',
             'password' => 'required',
         ]);
+
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -41,10 +46,12 @@ class AuthController extends Controller
                 'message' => 'The provided credentials are incorrect.',
             ];
         }
-        $token = $user->createToken($user->name);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return [
             'user' => $user,
-            'token' => $token->plainTextToken,
+            'token' => $token,
         ];
     }
 
@@ -79,10 +86,11 @@ class AuthController extends Controller
             $user = $existingUser;
         } else {
             $user = User::create([
-                'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
                 'password' => bcrypt(Str::random(24)),
                 'google_id' => $googleUser->getId(),
+                'role' => 'user',
+                'banned_at' => null,
             ]);
         }
 
