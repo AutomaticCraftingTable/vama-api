@@ -91,6 +91,7 @@ class AuthController extends Controller
                 'google_id' => $googleUser->getId(),
                 'role' => 'user',
                 'banned_at' => null,
+                'email_verified_at' => now(),
             ]);
         }
 
