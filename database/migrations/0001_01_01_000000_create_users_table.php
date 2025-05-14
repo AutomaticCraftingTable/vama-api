@@ -14,7 +14,7 @@ return new class () extends Migration {
             $table->string("email")->unique();
             $table->string("password");
             $table->timestamp("email_verified_at")->nullable();
-            $table->enum('role', ['user', 'moder', 'admin', 'superadmin'])->default('user');
+            $table->enum('role', ['user', 'moderator', 'admin', 'superadmin'])->default('user');
             $table->timestamp("banned_at")->nullable();
             $table->string('google_id')->nullable()->unique();
             $table->rememberToken();

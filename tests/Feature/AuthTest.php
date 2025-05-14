@@ -14,6 +14,15 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
+
+    private function createUser(array $attributes = []): User
+    {
+        return User::factory()->create(array_merge([
+            'password' => bcrypt('password123'),
+        ], $attributes));
+    }
+
+
     public function test_user_can_register()
     {
         $response = $this->postJson('/api/auth/register', [
@@ -211,4 +220,64 @@ class AuthTest extends TestCase
             'google_id' => 'google-9999',
         ]);
     }
+
+
+    public function test_user_can_update_password_with_correct_current_password()
+    {
+        $user = $this->createUser();
+
+        $response = $this->actingAs($user)->patchJson('/api/account', [
+            'current_password' => 'password123',
+            'new_password' => 'newpassword456',
+            'new_password_confirmation' => 'newpassword456',
+        ]);
+
+        $response->assertStatus(200)
+                 ->assertJson(['message' => 'Password updated successfully.']);
+
+        $this->assertTrue(Hash::check('newpassword456', $user->fresh()->password));
+    }
+
+    public function test_user_cannot_update_password_with_wrong_current_password()
+    {
+        $user = $this->createUser();
+
+        $response = $this->actingAs($user)->patchJson('/api/account', [
+            'current_password' => 'wrongpassword',
+            'new_password' => 'newpassword456',
+            'new_password_confirmation' => 'newpassword456',
+        ]);
+
+        $response->assertStatus(403)
+                 ->assertJson(['message' => 'Invalid current password.']);
+    }
+
+    public function test_user_can_delete_account_with_correct_current_password()
+    {
+        $user = $this->createUser();
+
+        $response = $this->actingAs($user)->deleteJson('/api/account', [
+            'current_password' => 'password123',
+        ]);
+
+        $response->assertStatus(200)
+                 ->assertJson(['message' => 'Account deleted successfully.']);
+
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    }
+
+    public function test_user_cannot_delete_account_with_wrong_current_password()
+    {
+        $user = $this->createUser();
+
+        $response = $this->actingAs($user)->deleteJson('/api/account', [
+            'current_password' => 'wrongpassword',
+        ]);
+
+        $response->assertStatus(403)
+                 ->assertJson(['message' => 'Invalid current password.']);
+
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+    }
+
 }
