@@ -14,12 +14,14 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
+
     private function createUser(array $attributes = []): User
     {
         return User::factory()->create(array_merge([
             'password' => bcrypt('password123'),
         ], $attributes));
     }
+
 
     public function test_user_can_register()
     {
@@ -219,6 +221,7 @@ class AuthTest extends TestCase
         ]);
     }
 
+
     public function test_user_can_update_password_with_correct_current_password()
     {
         $user = $this->createUser();
@@ -276,4 +279,5 @@ class AuthTest extends TestCase
 
         $this->assertDatabaseHas('users', ['id' => $user->id]);
     }
+
 }

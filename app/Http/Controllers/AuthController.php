@@ -92,6 +92,7 @@ class AuthController extends Controller
                 'role' => 'user',
                 'banned_at' => null,
                 'email_verified_at' => now(),
+
             ]);
         }
 

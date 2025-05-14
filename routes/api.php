@@ -23,6 +23,7 @@ Route::prefix('auth')->group(function () {
     Route::get('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 });
 
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/account', [UserController::class, 'updatePassword']);
 
@@ -48,3 +49,4 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
 
     Route::delete('/profile', [ProfileController::class, 'destroy']);
 });
+
