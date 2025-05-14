@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -15,6 +16,70 @@ class UserController extends Controller
         'admin' => 2,
         'superadmin' => 3,
     ];
+
+    public function updatePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['message' => 'Invalid current password.'], 403);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Password updated successfully.']);
+    }
+
+    public function destroyAccount(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'current_password' => 'required|string',
+        ]);
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['message' => 'Invalid current password.'], 403);
+        }
+
+        $user->delete();
+
+        return response()->json(['message' => 'Account deleted successfully.']);
+    }
+
+
+    public function destroyUserAccount(Request $request, $id)
+    {
+        $authUser = Auth::user();
+
+        try {
+            $targetUser = User::findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
+        $authRole = $this->roleHierarchy[$authUser->role];
+        $targetRole = $this->roleHierarchy[$targetUser->role];
+
+        if ($targetUser->role === 'superadmin') {
+            return response()->json(['error' => 'You are not allowed to delete a superadmin account.'], 403);
+        }
+
+        if ($authRole <= $targetRole) {
+            return response()->json(['error' => 'You are not allowed to delete this user.'], 403);
+        }
+
+        $targetUser->delete();
+
+        return response()->json(['message' => 'Account deleted successfully.']);
+    }
 
     public function banUser(Request $request, $id)
     {
