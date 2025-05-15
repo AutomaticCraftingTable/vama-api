@@ -14,7 +14,6 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-<<<<<<< Role
             'email' => $this->faker->unique()->safeEmail,
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
@@ -23,15 +22,6 @@ class UserFactory extends Factory
             'google_id' => null,
             'remember_token' => Str::random(10),
         ];
-=======
-    'email' => fake()->unique()->safeEmail(),
-    'password' => bcrypt('password'),
-    'email_verified_at' => now(),
-    'role' => 'user',
-    'banned_at' => null,
-    'google_id' => null,
-];
->>>>>>> main
     }
 
     public function unverified(): static
