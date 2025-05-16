@@ -138,16 +138,14 @@ class UserController extends Controller
         $targetUser->banned_at = null;
         $targetUser->save();
 
-        DB::table('bans')->insert([
-            'causer' => $authUser->id,
-            'target_type' => 'account',
-            'target_id' => $targetUser->id,
-            'content' => 'User unbanned. Reason: ' . $request->input('reason'),
-            'created_at' => now(),
-        ]);
+        DB::table('bans')
+            ->where('target_type', 'account')
+            ->where('target_id', $targetUser->id)
+            ->delete();
 
         return response()->json(['success' => 'User has been unbanned successfully.'], 200);
     }
+
 
     public function changeUserRole(Request $request, $id)
     {

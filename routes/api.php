@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\CommentController;
 
 Route::middleware("auth:sanctum")->get("/user", fn (Request $request): JsonResponse => new JsonResponse($request->user()));
 
@@ -28,19 +30,31 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/account', [UserController::class, 'updatePassword']);
 
     Route::delete('/account', [UserController::class, 'destroyAccount']);
+
+    Route::delete('/article/{id}', [ArticleController::class, 'destroyArticle']);
+
+    Route::delete('/comment/{id}', [CommentController::class, 'destroyComment']);
 });
 
 
 
 Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
     Route::middleware(['checkRole:admin,superadmin'])->group(function () {
+        Route::delete('/account/{id}', [UserController::class, 'destroyUserAccount']);
+
         Route::post('/account/{id}/ban', [UserController::class, 'banUser']);
 
-        Route::post('/account/{id}/unban', [UserController::class, 'unbanUser']);
+        Route::delete('/account/{id}/ban', [UserController::class, 'unbanUser']);
+
+        Route::post('/article/{id}/ban', [ArticleController::class, 'banArticle']);
+
+        Route::delete('/article/{id}/ban', [ArticleController::class, 'unbanArticle']);
+
+        Route::post('/comment/{id}/ban', [CommentController::class, 'banComment']);
+
+        Route::delete('/comment/{id}/ban', [CommentController::class, 'unbanComment']);
 
         Route::post('/account/{user}/role', [UserController::class, 'changeUserRole']);
-
-        Route::delete('/account/{id}', [UserController::class, 'destroyUserAccount']);
     });
 
     Route::post('/profile', [ProfileController::class, 'store']);
@@ -49,4 +63,3 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
 
     Route::delete('/profile', [ProfileController::class, 'destroy']);
 });
-

@@ -279,5 +279,4 @@ class AuthTest extends TestCase
 
         $this->assertDatabaseHas('users', ['id' => $user->id]);
     }
-
 }
