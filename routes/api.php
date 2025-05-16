@@ -10,6 +10,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\LikeReactionController;
+use App\Http\Controllers\NoteController;
 
 Route::middleware("auth:sanctum")->get("/user", fn (Request $request): JsonResponse => new JsonResponse($request->user()));
 
@@ -30,6 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/account', [UserController::class, 'updatePassword']);
 
     Route::delete('/account', [UserController::class, 'destroyAccount']);
+
+    Route::delete('/profile', [ProfileController::class, 'destroy']);
 
     Route::delete('/article/{id}', [ArticleController::class, 'destroyArticle']);
 
@@ -57,9 +61,21 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
         Route::post('/account/{user}/role', [UserController::class, 'changeUserRole']);
     });
 
+    Route::middleware(['checkRole:admin,superadmin,moderator'])->group(function () {
+        Route::post('/article/{id}/note', [NoteController::class, 'createNote']);
+
+        Route::delete('/note/{id}', [NoteController::class, 'deleteNote']);
+    });
+
     Route::post('/profile', [ProfileController::class, 'store']);
 
     Route::put('/profile', [ProfileController::class, 'update']);
 
-    Route::delete('/profile', [ProfileController::class, 'destroy']);
+    Route::post('/article/{id}', [ArticleController::class, 'createArticle']);
+
+    Route::post('/article/{id}/comment', [CommentController::class, 'createComment']);
+
+    Route::post('/article/{id}/like', [LikeReactionController::class, 'like']);
+
+    Route::delete('/article/{id}/like', [LikeReactionController::class, 'unlike']);
 });

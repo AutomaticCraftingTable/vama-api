@@ -28,4 +28,9 @@ class Profile extends Model
     {
         return $this->hasMany(Article::class, 'author', 'nickname');
     }
+
+    public function notes()
+    {
+        return $this->hasMany(Note::class, 'causer', 'nickname');
+    }
 }

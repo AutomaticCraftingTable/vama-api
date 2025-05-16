@@ -31,4 +31,9 @@ class Article extends Model
     {
         return $this->hasMany(LikeReaction::class);
     }
+
+    public function notes()
+    {
+        return $this->hasMany(Note::class);
+    }
 }

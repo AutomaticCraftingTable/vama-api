@@ -6,9 +6,33 @@ use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\Article;
 
 class CommentController extends Controller
 {
+    public function createComment(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'content' => 'required|string|max:1000',
+        ]);
+
+        $user = Auth::user();
+
+        $article = Article::find($id);
+
+        if (! $article) {
+            return response()->json(['message' => 'Article not found'], 404);
+        }
+
+        $comment = Comment::create([
+            'causer' => $user->id,
+            'article_id' => $article->id,
+            'content' => $validated['content'],
+        ]);
+
+        return response()->json($comment, 201);
+    }
+
     public function banComment(Request $request, $id)
     {
         $comment = Comment::findOrFail($id);

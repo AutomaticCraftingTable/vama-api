@@ -7,9 +7,40 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Profile;
+use Illuminate\Validation\ValidationException;
 
 class ArticleController extends Controller
 {
+    public function createArticle(Request $request, string $nickname)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'tags' => 'nullable|string',
+        ]);
+
+        $user = Auth::user();
+
+        $profile = \App\Models\Profile::where('nickname', $nickname)->first();
+
+        if (! $profile) {
+            return response()->json(['message' => 'Profile not found'], 404);
+        }
+
+        if ($profile->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized to post under this profile'], 403);
+        }
+
+        $article = Article::create([
+            'author' => $profile->nickname,
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'tags' => $validated['tags'] ?? null,
+        ]);
+
+        return response()->json($article, 201);
+    }
+
     public function banArticle(Request $request, $id)
     {
         $article = Article::findOrFail($id);
