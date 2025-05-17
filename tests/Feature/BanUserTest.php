@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class BanUserTest extends TestCase
@@ -122,7 +123,7 @@ class BanUserTest extends TestCase
         $superadmin = $this->createUser('superadmin');
         $user = $this->createUser('user', banned: true);
 
-        $response = $this->actingAs($superadmin)->postJson("/api/account/{$user->id}/unban", [
+        $response = $this->actingAs($superadmin)->deleteJson("/api/account/{$user->id}/ban", [
             'reason' => 'False positive.',
         ]);
 
@@ -135,7 +136,7 @@ class BanUserTest extends TestCase
         $admin1 = $this->createUser('admin');
         $admin2 = $this->createUser('admin', banned: true);
 
-        $response = $this->actingAs($admin1)->postJson("/api/account/{$admin2->id}/unban", [
+        $response = $this->actingAs($admin1)->deleteJson("/api/account/{$admin2->id}/ban", [
             'reason' => 'Trying to help.',
         ]);
 
@@ -148,7 +149,7 @@ class BanUserTest extends TestCase
         $user1 = $this->createUser('user');
         $user2 = $this->createUser('user', banned: true);
 
-        $response = $this->actingAs($user1)->postJson("/api/account/{$user2->id}/unban", [
+        $response = $this->actingAs($user1)->deleteJson("/api/account/{$user2->id}/ban", [
             'reason' => 'We cool now.',
         ]);
 
@@ -161,7 +162,7 @@ class BanUserTest extends TestCase
         $superadmin = $this->createUser('superadmin');
         $user = $this->createUser('user');
 
-        $response = $this->actingAs($superadmin)->postJson("/api/account/{$user->id}/unban", [
+        $response = $this->actingAs($superadmin)->deleteJson("/api/account/{$user->id}/ban", [
             'reason' => 'Just checking.',
         ]);
 
@@ -169,20 +170,29 @@ class BanUserTest extends TestCase
         $this->assertNull($user->fresh()->banned_at);
     }
 
-    public function test_unban_logs_correct_reason()
+    public function test_unban_removes_ban_record()
     {
         $superadmin = $this->createUser('superadmin');
         $user = $this->createUser('user', banned: true);
         $reason = 'Apologized and resolved.';
 
-        $response = $this->actingAs($superadmin)->postJson("/api/account/{$user->id}/unban", [
+        DB::table('bans')->insert([
+            'causer' => $superadmin->id,
+            'target_type' => 'account',
+            'target_id' => $user->id,
+            'content' => 'Initial ban reason.',
+            'created_at' => now(),
+        ]);
+
+        $response = $this->actingAs($superadmin)->deleteJson("/api/account/{$user->id}/ban", [
             'reason' => $reason,
         ]);
 
         $response->assertStatus(200);
-        $this->assertDatabaseHas('bans', [
+        $this->assertNull($user->fresh()->banned_at);
+        $this->assertDatabaseMissing('bans', [
+            'target_type' => 'account',
             'target_id' => $user->id,
-            'content' => 'User unbanned. Reason: ' . $reason,
         ]);
     }
 }

@@ -8,7 +8,7 @@ return new class () extends Migration {
     public function up(): void
     {
         Schema::create('profiles', function (Blueprint $table) {
-            $table->string('nickname');
+            $table->string('nickname')->unique();
             $table->foreignId('user_id')->unique()->constrained()->onDelete('cascade');
             $table->text('description')->nullable();
             $table->string('logo')->nullable();
