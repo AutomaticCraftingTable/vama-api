@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Article;
 use App\Models\Profile;
 use App\Models\User;
+use App\Models\Comment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Laravel\Sanctum\Sanctum;
 
 class ArticleTest extends TestCase
 {
@@ -104,4 +106,80 @@ class ArticleTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    public function test_guest_can_view_article()
+    {
+        $author = User::factory()->create();
+        $profile = Profile::factory()->create(['user_id' => $author->id]);
+
+        $article = Article::factory()->create([
+            'author' => $profile->nickname,
+        ]);
+
+        $response = $this->getJson("/api/article/{$article->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonFragment([
+                'id' => $article->id,
+                'nickname' => $profile->nickname,
+                'role' => 'guest',
+                'state' => 'noProfile',
+            ]);
+    }
+
+    public function test_authenticated_user_with_profile_can_view_article()
+    {
+        $author = User::factory()->create();
+        $profile = Profile::factory()->create(['user_id' => $author->id]);
+
+        $article = Article::factory()->create([
+            'author' => $profile->nickname,
+        ]);
+
+        $viewer = User::factory()->create(['role' => 'user']);
+        $viewerProfile = Profile::factory()->create(['user_id' => $viewer->id]);
+
+        Sanctum::actingAs($viewer);
+
+        $response = $this->getJson("/api/article/{$article->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonFragment([
+                'role' => 'user',
+                'state' => 'hasProfile',
+                'nickname' => $viewerProfile->nickname,
+            ]);
+    }
+
+    public function test_authenticated_user_without_profile_can_view_article()
+    {
+        $author = User::factory()->create();
+        $profile = Profile::factory()->create(['user_id' => $author->id]);
+
+        $article = Article::factory()->create([
+            'author' => $profile->nickname,
+        ]);
+
+        $viewer = User::factory()->create(['role' => 'user']);
+        Sanctum::actingAs($viewer);
+
+        $response = $this->getJson("/api/article/{$article->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonFragment([
+                'role' => 'user',
+                'state' => 'noProfile',
+                'profile' => null,
+            ]);
+    }
+
+    public function test_returns_404_if_article_not_found()
+    {
+        $response = $this->getJson('/api/article/999');
+
+        $response->assertStatus(404)
+            ->assertJson(['message' => 'Article not found']);
+    }
+
+
 }

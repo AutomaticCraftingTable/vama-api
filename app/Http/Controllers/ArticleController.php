@@ -11,6 +11,68 @@ use Illuminate\Validation\ValidationException;
 
 class ArticleController extends Controller
 {
+    public function showArticle($id)
+    {
+        $article = Article::with(['profile', 'comments.profile'])->find($id);
+
+        if (! $article) {
+            return response()->json(['message' => 'Article not found'], 404);
+        }
+
+        $authorProfile = $article->profile;
+        $comments = $article->comments->map(function ($comment) {
+            $commentProfile = $comment->profile;
+
+            return [
+                'id' => $comment->id,
+                'causer' => $comment->causer,
+                'article_id' => $comment->article_id,
+                'content' => $comment->content,
+                'banned_at' => optional($comment->banned_at)?->format('Y-m-d\TH:i:s.v\Z'),
+                'created_at' => $comment->created_at->format('Y-m-d\TH:i:s.v\Z'),
+                'updated_at' => $comment->updated_at->format('Y-m-d\TH:i:s.v\Z'),
+                'logo' => optional($commentProfile)->logo ?? 'string',
+                'likes' => $comment->likes ?? 0,
+            ];
+        });
+
+        $user = Auth::user();
+        $token = request()->bearerToken();
+        $profile = $user?->profile;
+
+        return response()->json([
+            'id' => $article->id,
+            'author' => [
+                'nickname' => $authorProfile->nickname,
+                'account_id' => $authorProfile->user_id,
+                'logo' => $authorProfile->logo,
+                'followers' => $authorProfile->followers()->count() ?? 0,
+            ],
+            'title' => $article->title,
+            'content' => $article->content,
+            'tags' => $article->tags,
+            'likes' => $article->likes ?? 0,
+            'comments' => $comments,
+            'thumbnail' => $article->thumbnail,
+            'banned_at' => optional($article->banned_at)?->format('Y-m-d\TH:i:s.v\Z'),
+            'created_at' => $article->created_at->format('Y-m-d\TH:i:s.v\Z'),
+            'updated_at' => $article->updated_at->format('Y-m-d\TH:i:s.v\Z'),
+            'role' => $user?->role ?? 'guest',
+            'state' => $profile ? 'hasProfile' : 'noProfile',
+            'token' => $token ?? 'string',
+            'profile' => $profile ? [
+                'nickname' => $profile->nickname,
+                'account_id' => $profile->user_id,
+                'description' => $profile->description,
+                'logo' => $profile->logo,
+                'followers' => $profile->followers()->count() ?? 0,
+                'created_at' => $profile->created_at->format('Y-m-d\TH:i:s.v\Z'),
+                'updated_at' => $profile->updated_at->format('Y-m-d\TH:i:s.v\Z'),
+            ] : null,
+        ]);
+    }
+
+
     public function createArticle(Request $request, string $nickname)
     {
         $validated = $request->validate([

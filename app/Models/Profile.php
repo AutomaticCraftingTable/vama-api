@@ -33,4 +33,14 @@ class Profile extends Model
     {
         return $this->hasMany(Note::class, 'causer', 'nickname');
     }
+
+    public function followers()
+    {
+        return $this->hasMany(Subscription::class, 'author', 'nickname');
+    }
+
+    public function following()
+    {
+        return $this->hasMany(Subscription::class, 'causer', 'nickname');
+    }
 }

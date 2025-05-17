@@ -15,9 +15,7 @@ use App\Http\Controllers\NoteController;
 
 Route::middleware("auth:sanctum")->get("/user", fn (Request $request): JsonResponse => new JsonResponse($request->user()));
 
-Route::middleware(['auth:sanctum', 'checkRole:admin,superadmin'])->get('/test/role', function () {
-    return response()->json(['message' => 'Access granted']);
-});
+Route::get('/article/{id}', [ArticleController::class, 'showArticle']);
 
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -78,4 +76,8 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
     Route::post('/article/{id}/like', [LikeReactionController::class, 'like']);
 
     Route::delete('/article/{id}/like', [LikeReactionController::class, 'unlike']);
+
+    Route::post('/profile/{nickname}/subscribe', [ProfileController::class, 'subscribe']);
+
+    Route::delete('/profile/{nickname}/subscribe', [ProfileController::class, 'unsubscribe']);
 });
