@@ -12,6 +12,7 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeReactionController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\ReportController;
 
 Route::middleware("auth:sanctum")->get("/user", fn (Request $request): JsonResponse => new JsonResponse($request->user()));
 
@@ -57,6 +58,9 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
         Route::delete('/comment/{id}/ban', [CommentController::class, 'unbanComment']);
 
         Route::post('/account/{user}/role', [UserController::class, 'changeUserRole']);
+
+        Route::delete('/{type}/{id}/report', [ReportController::class, 'deleteReports'])
+        ->where('type', 'article|comment|profile');
     });
 
     Route::middleware(['checkRole:admin,superadmin,moderator'])->group(function () {
@@ -80,4 +84,10 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
     Route::post('/profile/{nickname}/subscribe', [ProfileController::class, 'subscribe']);
 
     Route::delete('/profile/{nickname}/subscribe', [ProfileController::class, 'unsubscribe']);
+
+    Route::post('/article/{id}/report', [ReportController::class, 'reportArticle']);
+
+    Route::post('/comment/{id}/report', [ReportController::class, 'reportComment']);
+
+    Route::post('/profile/{id}/report', [ReportController::class, 'reportProfile']);
 });

@@ -56,4 +56,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Ban::class, 'causer');
     }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'causer');
+    }
 }
