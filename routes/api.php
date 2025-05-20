@@ -60,7 +60,7 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
         Route::post('/account/{user}/role', [UserController::class, 'changeUserRole']);
 
         Route::delete('/{type}/{id}/report', [ReportController::class, 'deleteReports'])
-        ->where('type', 'article|comment|profile');
+            ->where('type', 'article|comment|profile');
     });
 
     Route::middleware(['checkRole:admin,superadmin,moderator'])->group(function () {
@@ -89,5 +89,5 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
 
     Route::post('/comment/{id}/report', [ReportController::class, 'reportComment']);
 
-    Route::post('/profile/{id}/report', [ReportController::class, 'reportProfile']);
+    Route::post('/profile/{nickname}/report', [ReportController::class, 'reportProfile']);
 });

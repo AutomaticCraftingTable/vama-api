@@ -11,7 +11,7 @@ return new class () extends Migration {
             $table->id();
             $table->foreignId('causer')->constrained('users')->onDelete('cascade');
             $table->enum('target_type', ['profile', 'article', 'comment']);
-            $table->unsignedBigInteger('target_id');
+            $table->string('target_id');
             $table->text('content');
             $table->timestamp('created_at')->useCurrent();
         });
