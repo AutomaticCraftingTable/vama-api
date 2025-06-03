@@ -65,7 +65,7 @@ class AuthTest extends TestCase
             'password' => 'wrongpassword',
         ]);
 
-        $response->assertStatus(200)
+        $response->assertStatus(400)
                  ->assertJson([
                      'message' => 'The provided credentials are incorrect.',
                  ]);
@@ -81,7 +81,7 @@ class AuthTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->getJson('/api/auth/logout');
+        ])->postJson('/api/auth/logout');
 
         $response->assertStatus(200)
                  ->assertJson(['message' => 'You are logged out.']);
@@ -178,10 +178,13 @@ class AuthTest extends TestCase
 
         Socialite::shouldReceive('driver')->with('google')->andReturnSelf();
         Socialite::shouldReceive('user')->andReturn($mockUser);
-
         $response = $this->get('/auth/callback/google');
 
         $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'user' => ['id', 'email'],
+            'token',
+        ]);
 
         $this->assertDatabaseHas('users', [
             'email' => 'googlerole@example.com',
