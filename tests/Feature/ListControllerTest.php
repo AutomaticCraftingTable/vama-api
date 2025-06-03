@@ -209,4 +209,82 @@ class ListControllerTest extends TestCase
                      ],
                  ]);
     }
+
+
+public function test_admin_can_list_profiles_with_activities()
+{
+    $admin = User::factory()->create(['role' => 'admin']);
+    $token = $admin->createToken('TestToken')->plainTextToken;
+
+    $profile = \App\Models\Profile::factory()->create([
+        'nickname' => 'test_profile',
+        'description' => 'Test description',
+        'logo' => 'logo.png',
+        'user_id' => $admin->id,
+    ]);
+
+    activity('profiles')
+        ->causedBy($admin)
+        ->performedOn($profile)
+        ->log('Test activity on profile');
+
+    $response = $this->withHeader('Authorization', "Bearer $token")
+                     ->getJson('/api/list/profiles');
+
+    $responseData = $response->json();
+    $this->assertNotEmpty($responseData['profiles'], 'No profiles returned in response.');
+
+$response->assertJsonStructure([
+    'state',
+    'profiles' => [
+        '*' => [
+            'nickname',
+            'account_id',
+            'description',
+            'logo',
+            'followers',
+            'created_at',
+            'updated_at',
+            'activities' => [
+                '*' => [
+                    'id',
+                    'log_name',
+                    'description',
+                    'subject_id',
+                    'subject_type',
+                    'causer_id',
+                    'causer_type',
+                    'properties',
+                    'event',
+                    'created_at',
+                    'updated_at',
+                    'status',
+                ],
+            ],
+        ],
+    ],
+]);
+
+}
+
+
+
+
+    public function test_non_admin_cannot_list_profiles()
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $token = $user->createToken('TestToken')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', "Bearer $token")
+                         ->getJson('/api/list/profiles');
+
+        $response->assertStatus(403);
+    }
+
+    public function test_guest_cannot_access_profile_list()
+    {
+        $response = $this->getJson('/api/list/profiles');
+
+        $response->assertStatus(401);
+    }
 }

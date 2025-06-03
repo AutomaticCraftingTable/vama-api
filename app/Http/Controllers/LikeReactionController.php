@@ -6,9 +6,17 @@ use App\Models\Article;
 use App\Models\LikeReaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ActivityLoggerService;
 
 class LikeReactionController extends Controller
 {
+    protected ActivityLoggerService $logger;
+
+    public function __construct(ActivityLoggerService $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function like($id)
     {
         $user = Auth::user();
@@ -18,7 +26,6 @@ class LikeReactionController extends Controller
             return response()->json(['message' => 'Article not found'], 404);
         }
 
-        // Prevent duplicate likes
         $alreadyLiked = LikeReaction::where('causer', $user->id)
             ->where('article_id', $id)
             ->exists();
@@ -32,7 +39,17 @@ class LikeReactionController extends Controller
             'article_id' => $id,
         ]);
 
-        return response()->json(['message' => 'Article liked successfully', 'like' => $like], 201);
+        $this->logger->log(
+            subject: $article,
+            description: 'Article liked',
+            causer: $user,
+            logName: 'likes'
+        );
+
+        return response()->json([
+            'message' => 'Article liked successfully',
+            'like' => $like,
+        ], 201);
     }
 
     public function unlike($id)
@@ -47,7 +64,15 @@ class LikeReactionController extends Controller
             return response()->json(['message' => 'Like not found'], 404);
         }
 
+        $article = Article::find($id);
         $like->delete();
+
+        $this->logger->log(
+            subject: $article,
+            description: 'Article unliked',
+            causer: $user,
+            logName: 'likes'
+        );
 
         return response()->json(['message' => 'Like removed successfully'], 200);
     }

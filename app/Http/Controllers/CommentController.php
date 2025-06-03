@@ -7,9 +7,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Article;
+use App\Services\ActivityLoggerService;
 
 class CommentController extends Controller
 {
+    protected ActivityLoggerService $logger;
+
+    public function __construct(ActivityLoggerService $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function createComment(Request $request, $id)
     {
         $validated = $request->validate([
@@ -29,6 +37,15 @@ class CommentController extends Controller
             'article_id' => $article->id,
             'content' => $validated['content'],
         ]);
+
+        $this->logger->log(
+            subject: $comment,
+            description: 'Comment created',
+            causer: $user,
+            logName: 'comments'
+        );
+
+
 
         return response()->json($comment, 201);
     }
@@ -56,6 +73,14 @@ class CommentController extends Controller
             'created_at' => now(),
         ]);
 
+        $this->logger->log(
+            subject: $comment,
+            description: 'Comment banned',
+            causer: Auth::user(),
+            logName: 'comments'
+        );
+
+
         return response()->json(['success' => 'Comment has been banned.']);
     }
 
@@ -77,6 +102,14 @@ class CommentController extends Controller
             ->limit(1)
             ->delete();
 
+        $this->logger->log(
+            subject: $comment,
+            description: 'Comment unbanned',
+            causer: Auth::user(),
+            logName: 'comments'
+        );
+
+
         return response()->json(['success' => 'Comment has been unbanned.']);
     }
 
@@ -93,6 +126,14 @@ class CommentController extends Controller
         }
 
         $comment->delete();
+
+        $this->logger->log(
+            subject: $comment,
+            description: 'Comment deleted',
+            causer: $user,
+            logName: 'comments'
+        );
+
 
         return response()->json(['success' => 'Comment deleted.']);
     }

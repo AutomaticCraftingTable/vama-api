@@ -6,9 +6,17 @@ use App\Models\Profile;
 use Illuminate\Http\Request;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ActivityLoggerService;
 
 class ProfileController extends Controller
 {
+    protected ActivityLoggerService $logger;
+
+    public function __construct(ActivityLoggerService $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function me(Request $request)
     {
         $user = $request->user();
@@ -160,6 +168,13 @@ class ProfileController extends Controller
 
         $profile = $request->user()->profile()->create($request->only(['nickname', 'description', 'logo']));
 
+        $this->logger->log(
+            subject: $profile,
+            description: 'Profile created',
+            causer: $request->user(),
+            logName: 'profiles'
+        );
+
         return response()->json(['profile' => $profile], 201);
     }
 
@@ -168,25 +183,38 @@ class ProfileController extends Controller
         $user = $request->user();
         $profile = $user->profile;
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json(['message' => 'Profile not found.'], 404);
         }
 
         $profile->update($request->only(['nickname', 'description', 'logo']));
 
+        $this->logger->log(
+            subject: $profile,
+            description: 'Profile updated',
+            causer: $user,
+            logName: 'profiles'
+        );
+
         return response()->json(['profile' => $profile]);
     }
-
 
     public function destroy(Request $request)
     {
         $profile = $request->user()->profile;
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json(['message' => 'Profile not found.'], 404);
         }
 
         $profile->delete();
+
+        $this->logger->log(
+            subject: $profile,
+            description: 'Profile deleted',
+            causer: $request->user(),
+            logName: 'profiles'
+        );
 
         return response()->json(['message' => 'Profile deleted.']);
     }
@@ -208,10 +236,17 @@ class ProfileController extends Controller
             return response()->json(['message' => 'Already subscribed.'], 409);
         }
 
-        Subscription::create([
+        $subscription = Subscription::create([
             'causer' => $causerProfile->nickname,
             'author' => $authorProfile->nickname,
         ]);
+
+        $this->logger->log(
+            subject: $subscription,
+            description: 'Subscribed to profile',
+            causer: $request->user(),
+            logName: 'subscriptions'
+        );
 
         return response()->json(['message' => 'Subscribed successfully.'], 201);
     }
@@ -221,14 +256,23 @@ class ProfileController extends Controller
         $authorProfile = Profile::where('nickname', $nickname)->firstOrFail();
         $causerProfile = Profile::where('user_id', Auth::id())->firstOrFail();
 
-        $deleted = Subscription::where('causer', $causerProfile->nickname)
+        $subscription = Subscription::where('causer', $causerProfile->nickname)
             ->where('author', $authorProfile->nickname)
-            ->delete();
+            ->first();
 
-        if ($deleted) {
-            return response()->json(['message' => 'Unsubscribed successfully.']);
+        if (! $subscription) {
+            return response()->json(['message' => 'Subscription not found.'], 404);
         }
 
-        return response()->json(['message' => 'Subscription not found.'], 404);
+        $subscription->delete();
+
+        $this->logger->log(
+            subject: $subscription,
+            description: 'Unsubscribed from profile',
+            causer: $request->user(),
+            logName: 'subscriptions'
+        );
+
+        return response()->json(['message' => 'Unsubscribed successfully.']);
     }
 }

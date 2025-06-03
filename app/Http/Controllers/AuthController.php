@@ -7,10 +7,11 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use App\Services\ActivityLoggerService;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(Request $request, ActivityLoggerService $logger)
     {
         $fields = $request->validate([
             'email' => 'required|email|unique:users',
@@ -24,6 +25,14 @@ class AuthController extends Controller
             'banned_at' => null,
         ]);
 
+        $logger->log(
+            $user,
+            'User registered',
+            ['email' => $user->email],
+            $user,
+            'auth'
+        );
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return [
@@ -32,7 +41,7 @@ class AuthController extends Controller
         ];
     }
 
-    public function login(Request $request)
+    public function login(Request $request, ActivityLoggerService $logger)
     {
         $request->validate([
             'email' => 'required|email',
@@ -47,6 +56,14 @@ class AuthController extends Controller
             ], 400);
         }
 
+        $logger->log(
+            $user,
+            'User logged in',
+            ['email' => $user->email],
+            $user,
+            'auth'
+        );
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -55,11 +72,20 @@ class AuthController extends Controller
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request, ActivityLoggerService $logger)
     {
-        $request->user()->tokens->each(function ($token) {
-            $token->delete();
-        });
+        $user = $request->user();
+
+        $user->tokens->each(fn ($token) => $token->delete());
+
+        $logger->log(
+            $user,
+            'User logged out',
+            ['email' => $user->email],
+            $user,
+            'auth'
+        );
+
         return [
             'message' => 'You are logged out.',
         ];
@@ -95,6 +121,12 @@ class AuthController extends Controller
 
             ]);
         }
+
+        activity()
+        ->causedBy($user)
+        ->inLog('auth')
+        ->withProperties(['method' => 'google'])
+        ->log('User logged in via Google');
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

@@ -15,6 +15,7 @@ use App\Http\Controllers\NoteController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ListController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ActivityController;
 
 Route::middleware("auth:sanctum")->get("/user", fn (Request $request): JsonResponse => new JsonResponse($request->user()));
 
@@ -33,6 +34,10 @@ Route::prefix('auth')->group(function () {
 });
 
 
+Route::get('/auth/redirect/google', [AuthController::class, 'redirectToGoogle']);
+
+Route::get('/auth/callback/google', [AuthController::class, 'handleGoogleCallback']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/account', [UserController::class, 'updatePassword']);
 
@@ -48,6 +53,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
+    Route::middleware(['checkRole:superadmin'])->group(function () {
+        Route::get('/activities/admins', [ActivityController::class, 'allAdminActivities']);
+    });
     Route::middleware(['checkRole:admin,superadmin'])->group(function () {
         Route::delete('/account/{id}', [UserController::class, 'destroyUserAccount']);
 
@@ -77,6 +85,10 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
         Route::get('/list/reports/profiles', [ListController::class, 'reportedProfiles']);
 
         Route::get('/list/reports/comments', [ListController::class, 'reportedComments']);
+
+        Route::get('/list/profiles', [ListController::class, 'profiles']);
+
+        Route::get('/activities', [ActivityController::class, 'myActivity']);
     });
 
     Route::middleware(['checkRole:admin,superadmin,moderator'])->group(function () {

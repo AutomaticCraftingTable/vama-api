@@ -4,11 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Article;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Note;
+use Illuminate\Support\Facades\Auth;
+use App\Services\ActivityLoggerService;
 
 class NoteController extends Controller
 {
+    protected ActivityLoggerService $logger;
+
+    public function __construct(ActivityLoggerService $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function createNote(Request $request, $id)
     {
         $validated = $request->validate([
@@ -30,6 +38,13 @@ class NoteController extends Controller
             'article_id' => $article->id,
         ]);
 
+        $this->logger->log(
+            subject: $note,
+            description: 'Note created',
+            causer: $user,
+            logName: 'notes'
+        );
+
         return response()->json($note, 201);
     }
 
@@ -50,6 +65,13 @@ class NoteController extends Controller
         }
 
         $note->delete();
+
+        $this->logger->log(
+            subject: $note,
+            description: 'Note deleted',
+            causer: $user,
+            logName: 'notes'
+        );
 
         return response()->json(['message' => 'Note deleted'], 200);
     }

@@ -78,4 +78,52 @@ class ListController extends Controller
             'comments' => $comments,
         ]);
     }
+
+public function profiles()
+{
+    $profiles = \App\Models\Profile::withCount('followers')
+        ->with('user') 
+        ->latest()
+        ->get()
+        ->map(function ($profile) {
+            $activities = \Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Profile::class)
+                ->where('subject_id', $profile->id) 
+                ->latest()
+                ->get()
+                ->map(function ($activity) {
+                    return [
+                        'id' => $activity->id,
+                        'log_name' => $activity->log_name,
+                        'description' => $activity->description,
+                        'subject_id' => $activity->subject_id,
+                        'subject_type' => $activity->subject_type,
+                        'causer_id' => $activity->causer_id,
+                        'causer_type' => $activity->causer_type,
+                        'properties' => $activity->properties ?? [],
+                        'event' => $activity->event ?? '',
+                        'created_at' => $activity->created_at,
+                        'updated_at' => $activity->updated_at,
+                        'status' => 'success',
+                    ];
+                });
+
+            return [
+                'nickname' => $profile->nickname,
+                'account_id' => $profile->user_id,
+                'description' => $profile->description,
+                'logo' => $profile->logo,
+                'followers' => $profile->followers_count,
+                'created_at' => $profile->created_at,
+                'updated_at' => $profile->updated_at,
+                'activities' => $activities,
+            ];
+        });
+
+    return response()->json([
+        'state' => 'allProfiles',
+        'profiles' => $profiles,
+    ]);
+}
+
+
 }

@@ -3,14 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\Profile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Models\Profile;
-use Illuminate\Validation\ValidationException;
+use App\Services\ActivityLoggerService;
 
 class ArticleController extends Controller
 {
+    protected ActivityLoggerService $logger;
+
+    public function __construct(ActivityLoggerService $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function showArticle($id)
     {
         $article = Article::with(['profile', 'comments.profile'])->find($id);
@@ -72,7 +79,6 @@ class ArticleController extends Controller
         ]);
     }
 
-
     public function createArticle(Request $request, string $nickname)
     {
         $validated = $request->validate([
@@ -83,7 +89,7 @@ class ArticleController extends Controller
 
         $user = Auth::user();
 
-        $profile = \App\Models\Profile::where('nickname', $nickname)->first();
+        $profile = Profile::where('nickname', $nickname)->first();
 
         if (! $profile) {
             return response()->json(['message' => 'Profile not found'], 404);
@@ -99,6 +105,14 @@ class ArticleController extends Controller
             'content' => $validated['content'],
             'tags' => $validated['tags'] ?? null,
         ]);
+
+        $this->logger->log(
+            $article,
+            'Article created',
+            ['title' => $article->title],
+            $user,
+            'articles'
+        );
 
         return response()->json($article, 201);
     }
@@ -126,6 +140,14 @@ class ArticleController extends Controller
             'created_at' => now(),
         ]);
 
+        $this->logger->log(
+            $article,
+            'Article banned',
+            ['reason' => $request->input('reason')],
+            Auth::user(),
+            'articles'
+        );
+
         return response()->json(['success' => 'Article has been banned.']);
     }
 
@@ -147,6 +169,14 @@ class ArticleController extends Controller
             ->limit(1)
             ->delete();
 
+        $this->logger->log(
+            $article,
+            'Article unbanned',
+            [],
+            Auth::user(),
+            'articles'
+        );
+
         return response()->json(['success' => 'Article has been unbanned.']);
     }
 
@@ -165,6 +195,14 @@ class ArticleController extends Controller
         }
 
         $article->delete();
+
+        $this->logger->log(
+            $article,
+            'Article deleted',
+            [],
+            $user,
+            'articles'
+        );
 
         return response()->json(['success' => 'Article deleted.']);
     }
