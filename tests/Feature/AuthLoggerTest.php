@@ -53,7 +53,7 @@ class AuthLoggerTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->getJson('/api/auth/logout');
+        ])->postJson('/api/auth/logout');
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('activity_log', [

@@ -25,14 +25,19 @@ class ListControllerTest extends TestCase
         return User::factory()->create(['role' => $role]);
     }
 
-    public function test_it_returns_all_moderators_with_profiles()
+    public function test_it_returns_all_moderators_with_notes()
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $token = $admin->createToken('test-token')->plainTextToken;
 
         $moderators = User::factory()->count(2)->create(['role' => 'moderator']);
         foreach ($moderators as $moderator) {
-            Profile::factory()->create(['user_id' => $moderator->id]);
+            $profile = Profile::factory()->create(['user_id' => $moderator->id]);
+
+            Note::factory()->count(2)->create([
+                'causer' => $profile->nickname,
+                'article_id' => Article::factory()->create()->id,
+            ]);
         }
 
         User::factory()->create(['role' => 'user']);
@@ -47,20 +52,27 @@ class ListControllerTest extends TestCase
                          [
                              'id',
                              'email',
-                             'role',
-                             'created_at',
-                             'updated_at',
-                             'profile' => [
-                                 'nickname',
-                                 'description',
-                                 'logo',
-                                 'created_at',
-                                 'updated_at',
+                             'notes' => [
+                                 [
+                                     'id',
+                                     'content',
+                                     'causer',
+                                     'article_id',
+                                     'created_at',
+                                     'updated_at',
+                                 ],
                              ],
                          ],
                      ],
                  ]);
+
+
+        $data = $response->json('moders');
+        foreach ($data as $moderator) {
+            $this->assertCount(2, $moderator['notes']);
+        }
     }
+
 
     public function test_admin_can_see_all_notes()
     {
@@ -91,7 +103,6 @@ class ListControllerTest extends TestCase
                              'created_at',
                              'updated_at',
                              'profile',
-                             'article',
                          ],
                      ],
                  ]);
@@ -108,41 +119,66 @@ class ListControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
-
-    public function test_admin_can_see_reported_articles()
+    public function test_reported_articles_returns_correct_structure_and_data()
     {
-        $admin = $this->createUserWithRole('admin');
-        Profile::factory()->create(['user_id' => $admin->id]);
-        $token = $this->authenticate($admin);
+        $adminUser = User::factory()->create(['role' => 'admin']);
+        $token = $adminUser->createToken('TestToken')->plainTextToken;
 
-        $article = Article::factory()->create();
+        $authorUser = User::factory()->create();
+        $reporterUser = User::factory()->create();
 
-        $reports = Report::factory()->count(2)->create([
-            'target_type' => 'article',
-            'target_id' => $article->id,
+        $authorProfile = Profile::factory()->create([
+            'user_id' => $authorUser->id,
+            'nickname' => 'author_nick',
+            'logo' => 'logo.png',
         ]);
 
-        $response = $this->withToken($token)->getJson('/api/list/reports/articles');
+        $article = Article::factory()->create([
+            'author' => $authorProfile->nickname,
+            'title' => 'Sample Article',
+            'content' => 'Content of article',
+            'tags' => 'tag1,tag2',
+        ]);
 
-        $response->assertOk()
-                 ->assertJsonStructure([
-                     'articles' => [
-                         '*' => [
-                             'id',
-                             'author' => ['nickname', 'account_id', 'logo', 'followers'],
-                             'title',
-                             'content',
-                             'tags',
-                             'likes',
-                             'comments',
-                             'thumbnail',
-                             'banned_at',
-                             'created_at',
-                             'updated_at',
-                         ],
-                     ],
-                 ]);
+        Report::create([
+            'causer' => $reporterUser->id,
+            'target_type' => 'article',  // use the expected string here!
+            'target_id' => (string) $article->id,
+            'content' => 'Inappropriate content',
+        ]);
+
+        $this->withoutMiddleware(\App\Http\Middleware\CanAccessContent::class);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->getJson('/api/list/reports/articles');
+
+        $response->assertStatus(200);
+
+        $response->assertJsonStructure([
+            'articles' => [
+                '*' => [
+                    'id',
+                    'author' => [
+                        'nickname',
+                        'account_id',
+                        'logo',
+                        'followers',
+                    ],
+                    'title',
+                    'content',
+                    'tags',
+                    'likes',
+                    'reporter' => [
+                        'id',
+                        'email',
+                        'role',
+                    ],
+                ],
+            ],
+        ]);
     }
+
 
     public function test_admin_can_see_reported_profiles()
     {
@@ -211,61 +247,60 @@ class ListControllerTest extends TestCase
     }
 
 
-public function test_admin_can_list_profiles_with_activities()
-{
-    $admin = User::factory()->create(['role' => 'admin']);
-    $token = $admin->createToken('TestToken')->plainTextToken;
+    public function test_admin_can_list_profiles_with_activities()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $token = $admin->createToken('TestToken')->plainTextToken;
 
-    $profile = \App\Models\Profile::factory()->create([
-        'nickname' => 'test_profile',
-        'description' => 'Test description',
-        'logo' => 'logo.png',
-        'user_id' => $admin->id,
-    ]);
+        $profile = \App\Models\Profile::factory()->create([
+            'nickname' => 'test_profile',
+            'description' => 'Test description',
+            'logo' => 'logo.png',
+            'user_id' => $admin->id,
+        ]);
 
-    activity('profiles')
-        ->causedBy($admin)
-        ->performedOn($profile)
-        ->log('Test activity on profile');
+        activity('profiles')
+            ->causedBy($admin)
+            ->performedOn($profile)
+            ->log('Test activity on profile');
 
-    $response = $this->withHeader('Authorization', "Bearer $token")
-                     ->getJson('/api/list/profiles');
+        $response = $this->withHeader('Authorization', "Bearer $token")
+                         ->getJson('/api/list/profiles');
 
-    $responseData = $response->json();
-    $this->assertNotEmpty($responseData['profiles'], 'No profiles returned in response.');
+        $responseData = $response->json();
+        $this->assertNotEmpty($responseData['profiles'], 'No profiles returned in response.');
 
-$response->assertJsonStructure([
-    'state',
-    'profiles' => [
-        '*' => [
-            'nickname',
-            'account_id',
-            'description',
-            'logo',
-            'followers',
-            'created_at',
-            'updated_at',
-            'activities' => [
+        $response->assertJsonStructure([
+            'state',
+            'profiles' => [
                 '*' => [
-                    'id',
-                    'log_name',
+                    'nickname',
+                    'account_id',
                     'description',
-                    'subject_id',
-                    'subject_type',
-                    'causer_id',
-                    'causer_type',
-                    'properties',
-                    'event',
+                    'logo',
+                    'followers',
                     'created_at',
                     'updated_at',
-                    'status',
+                    'activities' => [
+                        '*' => [
+                            'id',
+                            'log_name',
+                            'description',
+                            'subject_id',
+                            'subject_type',
+                            'causer_id',
+                            'causer_type',
+                            'properties',
+                            'event',
+                            'created_at',
+                            'updated_at',
+                            'status',
+                        ],
+                    ],
                 ],
             ],
-        ],
-    ],
-]);
-
-}
+        ]);
+    }
 
 
 
