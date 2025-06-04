@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Contracts\User as ProviderUser;
+use Illuminate\Support\Facades\Cache;
 use Mockery;
 
 class AuthTest extends TestCase
@@ -65,7 +66,7 @@ class AuthTest extends TestCase
             'password' => 'wrongpassword',
         ]);
 
-        $response->assertStatus(200)
+        $response->assertStatus(400)
                  ->assertJson([
                      'message' => 'The provided credentials are incorrect.',
                  ]);
@@ -81,7 +82,7 @@ class AuthTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->getJson('/api/auth/logout');
+        ])->postJson('/api/auth/logout');
 
         $response->assertStatus(200)
                  ->assertJson(['message' => 'You are logged out.']);
@@ -145,24 +146,27 @@ class AuthTest extends TestCase
         ]);
     }
 
-
-
-    public function test_handle_google_callback_creates_user_and_returns_token()
+    public function test_handle_google_callback_creates_user_and_sets_cash()
     {
         $mockUser = Mockery::mock(ProviderUser::class);
         $mockUser->shouldReceive('getEmail')->andReturn('newgoogleuser@example.com');
         $mockUser->shouldReceive('getId')->andReturn('google-12345');
 
         Socialite::shouldReceive('driver')->with('google')->andReturnSelf();
+        Socialite::shouldReceive('stateless')->andReturnSelf();
         Socialite::shouldReceive('user')->andReturn($mockUser);
+
+        Cache::shouldReceive('put')
+        ->once()
+        ->withArgs(function ($key, $value, $ttl) {
+            return str_starts_with($key, 'auth_callback_pending:') &&
+                   isset($value['user']) &&
+                   isset($value['token']);
+        });
 
         $response = $this->get('/auth/callback/google');
 
         $response->assertStatus(200);
-        $response->assertJsonStructure([
-            'user' => ['id', 'email'],
-            'token',
-        ]);
 
         $this->assertDatabaseHas('users', [
             'email' => 'newgoogleuser@example.com',
@@ -177,8 +181,8 @@ class AuthTest extends TestCase
         $mockUser->shouldReceive('getId')->andReturn('google-role-123');
 
         Socialite::shouldReceive('driver')->with('google')->andReturnSelf();
+        Socialite::shouldReceive('stateless')->andReturnSelf();
         Socialite::shouldReceive('user')->andReturn($mockUser);
-
         $response = $this->get('/auth/callback/google');
 
         $response->assertStatus(200);
@@ -206,7 +210,15 @@ class AuthTest extends TestCase
         $abstractUser->shouldReceive('getId')->andReturn('google-9999');
 
         Socialite::shouldReceive('driver')->with('google')->andReturnSelf();
+        Socialite::shouldReceive('stateless')->andReturnSelf();
         Socialite::shouldReceive('user')->andReturn($abstractUser);
+
+        Cache::shouldReceive('put')
+        ->once()
+        ->withArgs(function ($key, $value, $ttl) {
+            return str_starts_with($key, 'auth_callback_pending:') &&
+                   isset($value['error']);
+        });
 
         $response = $this->get('/auth/callback/google');
 
@@ -220,6 +232,71 @@ class AuthTest extends TestCase
             'google_id' => 'google-9999',
         ]);
     }
+
+    public function test_init_google_login_returns_state_and_redirect_url()
+    {
+        Cache::shouldReceive('put')->once();
+
+        Socialite::shouldReceive('driver')->with('google')->andReturnSelf();
+        Socialite::shouldReceive('with')->andReturnSelf();
+        Socialite::shouldReceive('redirect')->andReturnSelf();
+        Socialite::shouldReceive('getTargetUrl')->andReturn('https://google.com/auth');
+
+        $response = $this->getJson('/auth/google/init');
+
+        $response->assertStatus(200)
+                ->assertJsonStructure(['state', 'redirect_url']);
+    }
+
+    public function test_check_google_login_poll_waiting()
+    {
+        Cache::shouldReceive('get')
+            ->with('auth_callback_pending:test-state')
+            ->andReturn(null);
+
+        $response = $this->getJson('/auth/google/wait/test-state');
+
+        $response->assertStatus(202)
+                ->assertJson(['status' => 'waiting']);
+    }
+
+    public function test_check_google_login_poll_resolution()
+    {
+        $state = 'test-state';
+        $user = User::factory()->make(['email' => 'user@example.com']);
+        $token = 'fake-token';
+
+        Cache::shouldReceive('get')
+            ->with("auth_callback_pending:$state")
+            ->andReturn([
+                'user' => $user,
+                'token' => $token,
+            ]);
+
+        $response = $this->getJson("/auth/google/wait/$state");
+
+        $response
+            ->assertStatus(200)
+            ->assertJson([
+                'user' => [ 'email' => 'user@example.com' ],
+                'token' => 'fake-token',
+            ]);
+    }
+
+    public function test_check_google_login_returns_email_taken_error()
+    {
+        $state = 'test-state';
+
+        Cache::shouldReceive('get')
+            ->with("auth_callback_pending:$state")
+            ->andReturn(['error' => 'email_taken']);
+
+        $response = $this->getJson("/auth/google/wait/$state");
+
+        $response->assertStatus(409)
+                ->assertJson(['message' => 'email_taken']);
+    }
+
 
 
     public function test_user_can_update_password_with_correct_current_password()
