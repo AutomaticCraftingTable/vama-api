@@ -180,6 +180,4 @@ class ArticleTest extends TestCase
         $response->assertStatus(404)
             ->assertJson(['message' => 'Article not found']);
     }
-
-
 }
