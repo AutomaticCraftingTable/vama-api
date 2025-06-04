@@ -30,7 +30,7 @@ Route::prefix('auth')->group(function () {
 
     Route::post('register', [AuthController::class, 'register']);
 
-    Route::get('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 });
 
 

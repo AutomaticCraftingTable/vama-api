@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use App\Services\ActivityLoggerService;
+use Illuminate\Support\Facades\Cache;
 
 class AuthController extends Controller
 {
@@ -91,26 +92,14 @@ class AuthController extends Controller
         ];
     }
 
-    public function redirectToGoogle()
+    public function handleGoogleCallback(Request $request)
     {
-        return Socialite::driver('google')->redirect();
-    }
+        $state = $request->query('state');
+        $googleUser = Socialite::driver('google')->stateless()->user();
 
-    public function handleGoogleCallback()
-    {
-        $googleUser = Socialite::driver('google')->user();
+        $user = User::where('email', $googleUser->getEmail())->first();
 
-        $existingUser = User::where('email', $googleUser->getEmail())->first();
-
-        if ($existingUser) {
-            if ($existingUser->google_id === null) {
-                return response()->json([
-                    'message' => 'This email is already registered. Please log in with email and password.',
-                ], 409);
-            }
-
-            $user = $existingUser;
-        } else {
+        if (!$user) {
             $user = User::create([
                 'email' => $googleUser->getEmail(),
                 'password' => bcrypt(Str::random(24)),
@@ -120,6 +109,11 @@ class AuthController extends Controller
                 'email_verified_at' => now(),
 
             ]);
+        } elseif ($user->google_id === null) {
+            Cache::put("auth_callback_pending:$state", ['error' => 'email_taken'], now()->addMinutes(20));
+            return response()->json([
+                'message' => 'This email is already registered. Please log in with email and password.',
+            ], 409);
         }
 
         activity()
@@ -130,9 +124,43 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
+        Cache::put("auth_callback_pending:$state", [
             'user' => $user,
             'token' => $token,
+        ], now()->addMinutes(2));
+
+        return view('callback');
+    }
+
+    public function initGoogleLogin()
+    {
+        $state = Str::uuid()->toString();
+
+        Cache::put("auth_callback_pending:$state", null, now()->addMinutes(20));
+
+        $url = Socialite::driver('google')
+            ->with(['state' => $state])
+            ->redirect()
+            ->getTargetUrl();
+
+        return response()->json([
+            'state' => $state,
+            'redirect_url' => $url,
         ]);
+    }
+
+    public function checkGoogleLogin(string $state)
+    {
+        $data = Cache::get("auth_callback_pending:$state");
+
+        if (!$data) {
+            return response()->json(['status' => 'waiting'], 202);
+        }
+
+        if (isset($data['error'])) {
+            return response()->json(['message' => $data['error']], 409);
+        }
+
+        return response()->json($data);
     }
 }
