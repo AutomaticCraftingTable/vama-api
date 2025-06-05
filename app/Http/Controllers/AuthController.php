@@ -53,7 +53,9 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
+            return response()->json([
                 'message' => 'The provided credentials are incorrect.',
+            ], 400);
             ], 400);
         }
 
@@ -96,9 +98,13 @@ class AuthController extends Controller
     {
         $state = $request->query('state');
         $googleUser = Socialite::driver('google')->stateless()->user();
+        $state = $request->query('state');
+        $googleUser = Socialite::driver('google')->stateless()->user();
 
         $user = User::where('email', $googleUser->getEmail())->first();
+        $user = User::where('email', $googleUser->getEmail())->first();
 
+        if (!$user) {
         if (!$user) {
             $user = User::create([
                 'email' => $googleUser->getEmail(),
@@ -107,7 +113,6 @@ class AuthController extends Controller
                 'role' => 'user',
                 'banned_at' => null,
                 'email_verified_at' => now(),
-
             ]);
         } elseif ($user->google_id === null) {
             Cache::put("auth_callback_pending:$state", ['error' => 'email_taken'], now()->addMinutes(20));
@@ -125,8 +130,44 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         Cache::put("auth_callback_pending:$state", [
+        Cache::put("auth_callback_pending:$state", [
             'user' => $user,
             'token' => $token,
+        ], now()->addMinutes(2));
+
+        return view('callback');
+    }
+
+    public function initGoogleLogin()
+    {
+        $state = Str::uuid()->toString();
+
+        Cache::put("auth_callback_pending:$state", null, now()->addMinutes(20));
+
+        $url = Socialite::driver('google')
+            ->with(['state' => $state])
+            ->redirect()
+            ->getTargetUrl();
+
+        return response()->json([
+            'state' => $state,
+            'redirect_url' => $url,
+        ]);
+    }
+
+    public function checkGoogleLogin(string $state)
+    {
+        $data = Cache::get("auth_callback_pending:$state");
+
+        if (!$data) {
+            return response()->json(['status' => 'waiting'], 202);
+        }
+
+        if (isset($data['error'])) {
+            return response()->json(['message' => $data['error']], 409);
+        }
+
+        return response()->json($data);
         ], now()->addMinutes(2));
 
         return view('callback');
