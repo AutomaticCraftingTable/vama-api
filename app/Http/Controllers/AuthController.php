@@ -7,11 +7,12 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use App\Services\ActivityLoggerService;
 use Illuminate\Support\Facades\Cache;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(Request $request, ActivityLoggerService $logger)
     {
         $fields = $request->validate([
             'email' => 'required|email|unique:users',
@@ -25,6 +26,14 @@ class AuthController extends Controller
             'banned_at' => null,
         ]);
 
+        $logger->log(
+            $user,
+            'User registered',
+            ['email' => $user->email],
+            $user,
+            'auth'
+        );
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return [
@@ -33,10 +42,10 @@ class AuthController extends Controller
         ];
     }
 
-    public function login(Request $request)
+    public function login(Request $request, ActivityLoggerService $logger)
     {
         $request->validate([
-            'email' => 'required|email|exists:users',
+            'email' => 'required|email',
             'password' => 'required',
         ]);
 
@@ -44,23 +53,42 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
+            return response()->json([
                 'message' => 'The provided credentials are incorrect.',
+            ], 400);
             ], 400);
         }
 
+        $logger->log(
+            $user,
+            'User logged in',
+            ['email' => $user->email],
+            $user,
+            'auth'
+        );
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return [
+        return response()->json([
             'user' => $user,
             'token' => $token,
-        ];
+        ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request, ActivityLoggerService $logger)
     {
-        $request->user()->tokens->each(function ($token) {
-            $token->delete();
-        });
+        $user = $request->user();
+
+        $user->tokens->each(fn ($token) => $token->delete());
+
+        $logger->log(
+            $user,
+            'User logged out',
+            ['email' => $user->email],
+            $user,
+            'auth'
+        );
+
         return [
             'message' => 'You are logged out.',
         ];
@@ -70,9 +98,13 @@ class AuthController extends Controller
     {
         $state = $request->query('state');
         $googleUser = Socialite::driver('google')->stateless()->user();
+        $state = $request->query('state');
+        $googleUser = Socialite::driver('google')->stateless()->user();
 
         $user = User::where('email', $googleUser->getEmail())->first();
+        $user = User::where('email', $googleUser->getEmail())->first();
 
+        if (!$user) {
         if (!$user) {
             $user = User::create([
                 'email' => $googleUser->getEmail(),
@@ -89,11 +121,53 @@ class AuthController extends Controller
             ], 409);
         }
 
+        activity()
+        ->causedBy($user)
+        ->inLog('auth')
+        ->withProperties(['method' => 'google'])
+        ->log('User logged in via Google');
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         Cache::put("auth_callback_pending:$state", [
+        Cache::put("auth_callback_pending:$state", [
             'user' => $user,
             'token' => $token,
+        ], now()->addMinutes(2));
+
+        return view('callback');
+    }
+
+    public function initGoogleLogin()
+    {
+        $state = Str::uuid()->toString();
+
+        Cache::put("auth_callback_pending:$state", null, now()->addMinutes(20));
+
+        $url = Socialite::driver('google')
+            ->with(['state' => $state])
+            ->redirect()
+            ->getTargetUrl();
+
+        return response()->json([
+            'state' => $state,
+            'redirect_url' => $url,
+        ]);
+    }
+
+    public function checkGoogleLogin(string $state)
+    {
+        $data = Cache::get("auth_callback_pending:$state");
+
+        if (!$data) {
+            return response()->json(['status' => 'waiting'], 202);
+        }
+
+        if (isset($data['error'])) {
+            return response()->json(['message' => $data['error']], 409);
+        }
+
+        return response()->json($data);
         ], now()->addMinutes(2));
 
         return view('callback');

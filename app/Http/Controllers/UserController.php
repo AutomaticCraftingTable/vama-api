@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Services\ActivityLoggerService;
 
 class UserController extends Controller
 {
@@ -17,6 +18,13 @@ class UserController extends Controller
         'superadmin' => 3,
     ];
 
+    protected ActivityLoggerService $logger;
+
+    public function __construct(ActivityLoggerService $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function updatePassword(Request $request)
     {
         $user = $request->user();
@@ -26,13 +34,20 @@ class UserController extends Controller
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
-
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json(['message' => 'Invalid current password.'], 403);
         }
 
         $user->password = Hash::make($request->new_password);
         $user->save();
+
+        $this->logger->log(
+            subject: $user,
+            description: 'Password updated',
+            causer: $user,
+            logName: 'users'
+        );
+
 
         return response()->json(['message' => 'Password updated successfully.']);
     }
@@ -49,11 +64,18 @@ class UserController extends Controller
             return response()->json(['message' => 'Invalid current password.'], 403);
         }
 
+        $this->logger->log(
+            subject: $user,
+            description: 'Account deleted',
+            causer: $user,
+            logName: 'users'
+        );
+
+
         $user->delete();
 
         return response()->json(['message' => 'Account deleted successfully.']);
     }
-
 
     public function destroyUserAccount(Request $request, $id)
     {
@@ -75,6 +97,14 @@ class UserController extends Controller
         if ($authRole <= $targetRole) {
             return response()->json(['error' => 'You are not allowed to delete this user.'], 403);
         }
+
+        $this->logger->log(
+            subject: $targetUser,
+            description: 'User account deleted',
+            causer: $authUser,
+            logName: 'users'
+        );
+
 
         $targetUser->delete();
 
@@ -112,6 +142,14 @@ class UserController extends Controller
             'created_at' => now(),
         ]);
 
+        $this->logger->log(
+            subject: $targetUser,
+            description: 'User banned',
+            properties: ['reason' => $request->input('reason')],
+            causer: $authUser,
+            logName: 'users'
+        );
+
         return response()->json(['success' => 'User has been banned successfully.'], 200);
     }
 
@@ -143,9 +181,16 @@ class UserController extends Controller
             ->where('target_id', $targetUser->id)
             ->delete();
 
+        $this->logger->log(
+            subject: $targetUser,
+            description: 'User unbanned',
+            properties: ['reason' => $request->input('reason')],
+            causer: $authUser,
+            logName: 'users'
+        );
+
         return response()->json(['success' => 'User has been unbanned successfully.'], 200);
     }
-
 
     public function changeUserRole(Request $request, $id)
     {
@@ -172,6 +217,14 @@ class UserController extends Controller
 
         $targetUser->role = $newRole;
         $targetUser->save();
+
+        $this->logger->log(
+            subject: $targetUser,
+            description: 'User role changed',
+            properties: ['new_role' => $newRole],
+            causer: $authUser,
+            logName: 'users'
+        );
 
         return response()->json(['message' => 'Role changed successfully.'], 200);
     }

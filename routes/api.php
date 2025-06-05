@@ -12,10 +12,18 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeReactionController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ListController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ActivityController;
 
 Route::middleware("auth:sanctum")->get("/user", fn (Request $request): JsonResponse => new JsonResponse($request->user()));
 
 Route::get('/article/{id}', [ArticleController::class, 'showArticle']);
+
+Route::get('/home', [HomeController::class, 'home']);
+
+Route::post('/home/search', [HomeController::class, 'search']);
 
 Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
@@ -25,6 +33,10 @@ Route::prefix('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 });
 
+
+Route::get('/auth/redirect/google', [AuthController::class, 'redirectToGoogle']);
+
+Route::get('/auth/callback/google', [AuthController::class, 'handleGoogleCallback']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/account', [UserController::class, 'updatePassword']);
@@ -41,6 +53,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
+    Route::middleware(['checkRole:superadmin'])->group(function () {
+        Route::get('/activities/admins', [ActivityController::class, 'allAdminActivities']);
+    });
     Route::middleware(['checkRole:admin,superadmin'])->group(function () {
         Route::delete('/account/{id}', [UserController::class, 'destroyUserAccount']);
 
@@ -57,6 +72,23 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
         Route::delete('/comment/{id}/ban', [CommentController::class, 'unbanComment']);
 
         Route::post('/account/{user}/role', [UserController::class, 'changeUserRole']);
+
+        Route::delete('/{type}/{id}/report', [ReportController::class, 'deleteReports'])
+            ->where('type', 'article|comment|profile');
+
+        Route::get('/list/moderators', [ListController::class, 'moderators']);
+
+        Route::get('/list/notes', [ListController::class, 'notes']);
+
+        Route::get('/list/reports/articles', [ListController::class, 'reportedArticles']);
+
+        Route::get('/list/reports/profiles', [ListController::class, 'reportedProfiles']);
+
+        Route::get('/list/reports/comments', [ListController::class, 'reportedComments']);
+
+        Route::get('/list/profiles', [ListController::class, 'profiles']);
+
+        Route::get('/activities', [ActivityController::class, 'myActivity']);
     });
 
     Route::middleware(['checkRole:admin,superadmin,moderator'])->group(function () {
@@ -80,4 +112,18 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
     Route::post('/profile/{nickname}/subscribe', [ProfileController::class, 'subscribe']);
 
     Route::delete('/profile/{nickname}/subscribe', [ProfileController::class, 'unsubscribe']);
+
+    Route::post('/article/{id}/report', [ReportController::class, 'reportArticle']);
+
+    Route::post('/comment/{id}/report', [ReportController::class, 'reportComment']);
+
+    Route::post('/profile/{nickname}/report', [ReportController::class, 'reportProfile']);
+
+    Route::get('/profile', [ProfileController::class, 'me']);
+
+    Route::get('/profile/{nickname}', [ProfileController::class, 'show']);
+
+    Route::get('/home/subscriptions', [HomeController::class, 'subscriptions']);
+
+    Route::get('/home/liked', [HomeController::class, 'likedArticles']);
 });

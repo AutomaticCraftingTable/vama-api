@@ -43,4 +43,9 @@ class Profile extends Model
     {
         return $this->hasMany(Subscription::class, 'causer', 'nickname');
     }
+
+    public function reports(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(Report::class, 'target');
+    }
 }

@@ -72,6 +72,20 @@ class AuthTest extends TestCase
                  ]);
     }
 
+    public function test_login_fails_with_nonexistent_email()
+    {
+        $response = $this->postJson('/api/auth/login', [
+            'email' => 'nonexistent@example.com',
+            'password' => 'anyPassword',
+        ]);
+
+        $response->assertStatus(400)
+                 ->assertJson([
+                     'message' => 'The provided credentials are incorrect.',
+                 ]);
+    }
+
+
     public function test_user_can_logout()
     {
         $user = User::factory()->create([
