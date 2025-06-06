@@ -71,7 +71,7 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
 
         Route::delete('/comment/{id}/ban', [CommentController::class, 'unbanComment']);
 
-        Route::post('/account/{user}/role', [UserController::class, 'changeUserRole']);
+        Route::post('/account/{id}/role', [UserController::class, 'changeUserRole']);
 
         Route::delete('/{type}/{id}/report', [ReportController::class, 'deleteReports'])
             ->where('type', 'article|comment|profile');
