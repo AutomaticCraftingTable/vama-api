@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use App\Services\ActivityLoggerService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -35,6 +36,7 @@ class AuthController extends Controller
         );
 
         $token = $user->createToken('auth_token')->plainTextToken;
+        event(new Registered($user));
 
         return [
             'user' => $user,

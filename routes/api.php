@@ -16,6 +16,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ListController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\VerifyEmailNotificationController;
 
 Route::middleware("auth:sanctum")->get("/user", fn (Request $request): JsonResponse => new JsonResponse($request->user()));
 
@@ -127,3 +129,13 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
 
     Route::get('/home/liked', [HomeController::class, 'likedArticles']);
 });
+
+
+
+
+
+Route::middleware('auth:sanctum')->post('/email/verification-notification', VerifyEmailNotificationController::class);
+
+Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['signed'])
+    ->name('verification.verify');
