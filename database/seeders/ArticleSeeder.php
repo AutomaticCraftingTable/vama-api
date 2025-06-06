@@ -2,13 +2,27 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Article;
+use App\Models\Profile;
+use Illuminate\Database\Seeder;
 
 class ArticleSeeder extends Seeder
 {
     public function run(): void
     {
-        Article::factory()->count(20)->create();
+        $profiles = Profile::all();
+
+        if ($profiles->isEmpty()) {
+            $this->command->error('No profiles found. Seed users and profiles first.');
+            return;
+        }
+
+        Article::factory()
+            ->count(25)
+            ->make()
+            ->each(function ($article) use ($profiles) {
+                $article->author = $profiles->random()->nickname;
+                $article->save();
+            });
     }
 }
