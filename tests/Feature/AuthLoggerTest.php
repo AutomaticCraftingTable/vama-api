@@ -62,33 +62,32 @@ class AuthLoggerTest extends TestCase
         ]);
     }
 
-public function test_google_login_logs_activity()
-{
-    $user = \App\Models\User::factory()->create([
-        'email' => 'googleuser@example.com',
-        'google_id' => '1234567890',
-    ]);
+    public function test_google_login_logs_activity()
+    {
+        $user = \App\Models\User::factory()->create([
+            'email' => 'googleuser@example.com',
+            'google_id' => '1234567890',
+        ]);
 
-    $mockSocialiteUser = \Mockery::mock(\Laravel\Socialite\Contracts\User::class);
-    $mockSocialiteUser->shouldReceive('getEmail')->andReturn('googleuser@example.com');
-    $mockSocialiteUser->shouldReceive('getId')->andReturn('1234567890');
+        $mockSocialiteUser = \Mockery::mock(\Laravel\Socialite\Contracts\User::class);
+        $mockSocialiteUser->shouldReceive('getEmail')->andReturn('googleuser@example.com');
+        $mockSocialiteUser->shouldReceive('getId')->andReturn('1234567890');
 
-    $mockProvider = \Mockery::mock(\Laravel\Socialite\Contracts\Provider::class);
-    $mockProvider->shouldReceive('stateless')->andReturnSelf();
-    $mockProvider->shouldReceive('user')->andReturn($mockSocialiteUser);
+        $mockProvider = \Mockery::mock(\Laravel\Socialite\Contracts\Provider::class);
+        $mockProvider->shouldReceive('stateless')->andReturnSelf();
+        $mockProvider->shouldReceive('user')->andReturn($mockSocialiteUser);
 
-    \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')
-        ->with('google')
-        ->andReturn($mockProvider);
+        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')
+            ->with('google')
+            ->andReturn($mockProvider);
 
-    $response = $this->getJson('/api/auth/callback/google');
+        $response = $this->getJson('/api/auth/callback/google');
 
-    $response->assertStatus(200);
+        $response->assertStatus(200);
 
-    $this->assertDatabaseHas('activity_log', [
-        'description' => 'User logged in via Google',
-        'log_name' => 'auth',
-    ]);
-}
-
+        $this->assertDatabaseHas('activity_log', [
+            'description' => 'User logged in via Google',
+            'log_name' => 'auth',
+        ]);
+    }
 }
