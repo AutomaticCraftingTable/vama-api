@@ -19,7 +19,7 @@ class ReportSeeder extends Seeder
             DB::table('reports')->insert([
                 'causer' => fake()->randomElement($causerIds),
                 'target_type' => 'profile',
-                'target_id' => $profile->nickname,
+                'target_id' => $profile->nickname, 
                 'content' => fake()->sentence(),
                 'created_at' => now(),
             ]);

@@ -125,7 +125,7 @@ class SeederTest extends TestCase
         $this->assertNotNull($note->article_id);
     }
 
-    public function test_subscriptions_are_created_with_existing_profiles()
+     public function test_subscriptions_are_created_with_existing_profiles()
     {
         $this->seed(\Database\Seeders\UserWithProfilesSeeder::class);
         $this->seed(\Database\Seeders\SubscriptionSeeder::class);
@@ -136,7 +136,7 @@ class SeederTest extends TestCase
         $this->assertNotEquals($subscription->causer, $subscription->author);
     }
 
-    public function test_reports_are_created_for_each_type()
+     public function test_reports_are_created_for_each_type()
     {
         $this->seed(\Database\Seeders\UserWithProfilesSeeder::class);
         $this->seed(\Database\Seeders\ArticleSeeder::class);
