@@ -74,7 +74,7 @@ class ListControllerTest extends TestCase
     }
 
 
-    
+
 
 
     public function test_user_cannot_access_notes()
@@ -110,7 +110,7 @@ class ListControllerTest extends TestCase
 
         Report::create([
             'causer' => $reporterUser->id,
-            'target_type' => 'article',  
+            'target_type' => 'article',
             'target_id' => (string) $article->id,
             'content' => 'Inappropriate content',
         ]);
