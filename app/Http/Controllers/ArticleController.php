@@ -20,10 +20,7 @@ class ArticleController extends Controller
 
     public function showArticle($id)
     {
-        $article = Article::with([
-            'profile',
-            'comments.user.profile',
-        ])->find($id);
+        $article = Article::with(['profile', 'comments.user.profile'])->find($id);
 
         if (! $article) {
             return response()->json(['message' => 'Article not found'], 404);
@@ -83,17 +80,16 @@ class ArticleController extends Controller
         ]);
     }
 
-
     public function createArticle(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'tags' => 'nullable|string',
+            'thumbnail' => 'nullable|string',
         ]);
 
         $user = Auth::user();
-
         $profile = Profile::where('user_id', $user->id)->first();
 
         if (! $profile) {
@@ -105,6 +101,7 @@ class ArticleController extends Controller
             'title' => $validated['title'],
             'content' => $validated['content'],
             'tags' => $validated['tags'] ?? null,
+            'thumbnail' => $validated['thumbnail'] ?? null,
         ]);
 
         $this->logger->log(
@@ -185,13 +182,11 @@ class ArticleController extends Controller
     {
         $user = Auth::user();
         $article = Article::findOrFail($id);
-
         $profile = Profile::where('user_id', $user->id)->first();
-
         $isAdmin = in_array($user->role, ['admin', 'superadmin']);
         $isAuthor = $profile && $profile->nickname === $article->author;
 
-        if (!$isAdmin && !$isAuthor) {
+        if (! $isAdmin && ! $isAuthor) {
             return response()->json(['error' => 'Forbidden.'], 403);
         }
 

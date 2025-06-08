@@ -17,6 +17,7 @@ class ArticleFactory extends Factory
             'title' => $this->faker->sentence,
             'content' => $this->faker->paragraph(6),
             'tags' => implode(',', $this->faker->words(3)),
+            'thumbnail' => $this->faker->imageUrl(),
             'banned_at' => null,
         ];
     }
