@@ -187,7 +187,7 @@ class ProfileController extends Controller
             return response()->json(['message' => 'Profile not found.'], 404);
         }
 
-        $profile->update($request->only(['nickname', 'description', 'logo']));
+        $profile->update($request->only(['description', 'logo']));
 
         $this->logger->log(
             subject: $profile,
@@ -198,6 +198,7 @@ class ProfileController extends Controller
 
         return response()->json(['profile' => $profile]);
     }
+
 
     public function destroy(Request $request)
     {
