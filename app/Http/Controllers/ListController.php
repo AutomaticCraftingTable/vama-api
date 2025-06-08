@@ -40,10 +40,20 @@ class ListController extends Controller
 
     public function notes(): JsonResponse
     {
-        $notes = Note::with(['article', 'profile'])->get();
+        $notes = Note::with(['article', 'profile'])->get()->map(function ($note) {
+            return [
+                'id' => $note->id,
+                'content' => $note->content,
+                'causer' => $note->causer,
+                'article_id' => $note->article_id,
+                'created_at' => $note->created_at->toISOString(),
+                'updated_at' => $note->updated_at->toISOString(),
+            ];
+        });
 
         return response()->json(['notes' => $notes], 200);
     }
+
 
     public function reportedArticles(): JsonResponse
     {

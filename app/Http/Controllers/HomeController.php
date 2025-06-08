@@ -11,7 +11,7 @@ class HomeController extends Controller
 {
     public function home(Request $request)
     {
-        $articles = \App\Models\Article::with([
+        $articles = Article::with([
                 'profile:user_id,nickname,logo,description,created_at,updated_at',
                 'comments.user.profile:user_id,nickname,logo',
             ])
@@ -56,20 +56,15 @@ class HomeController extends Controller
                 ];
             });
 
-        return response()->json([
-            'articles' => $articles,
-        ]);
+        return response()->json(['articles' => $articles]);
     }
-
-
-
 
     public function subscriptions(Request $request)
     {
         $user = $request->user();
         $profile = $user->profile;
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json(['message' => 'Profile not found.'], 404);
         }
 
@@ -116,7 +111,7 @@ class HomeController extends Controller
         $user = $request->user();
         $profile = $user->profile;
 
-        if (!$profile) {
+        if (! $profile) {
             return response()->json(['message' => 'Profile not found.'], 404);
         }
 
@@ -180,17 +175,12 @@ class HomeController extends Controller
         ]);
     }
 
-
     public function search(Request $request)
     {
-        $validated = $request->validate([
-        'query' => 'required|string',
-    ]);
-
+        $validated = $request->validate(['query' => 'required|string']);
         $query = $validated['query'];
 
-
-        $articles = \App\Models\Article::with([
+        $articles = Article::with([
                 'profile:user_id,nickname,logo,description,created_at,updated_at',
                 'comments.user:id,nickname,logo',
             ])

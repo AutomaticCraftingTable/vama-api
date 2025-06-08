@@ -15,6 +15,7 @@ class Article extends Model
         'title',
         'content',
         'tags',
+        'thumbnail',
         'banned_at',
     ];
 
