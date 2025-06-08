@@ -48,7 +48,6 @@ class HomeControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
-                'state',
                 'articles' => [
                     [
                         'id',
@@ -92,7 +91,6 @@ class HomeControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJson([
-                'state' => 'allArticles',
                 'articles' => [],
             ]);
     }

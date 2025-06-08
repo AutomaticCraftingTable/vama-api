@@ -35,7 +35,7 @@ class ArticleTest extends TestCase
             'tags' => 'tag1,tag2',
         ];
 
-        $response = $this->actingAs($user)->postJson("/api/article/{$nickname}", $payload);
+        $response = $this->actingAs($user)->postJson("/api/article", $payload);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('articles', [
@@ -56,7 +56,7 @@ class ArticleTest extends TestCase
             'tags' => 'tag1',
         ];
 
-        $response = $this->actingAs($user)->postJson("/api/article/{$nickname}", $payload);
+        $response = $this->actingAs($user)->postJson("/api/article", $payload);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('title');
@@ -71,7 +71,7 @@ class ArticleTest extends TestCase
             'title' => 'Title without content',
         ];
 
-        $response = $this->actingAs($user)->postJson("/api/article/{$nickname}", $payload);
+        $response = $this->actingAs($user)->postJson("/api/article", $payload);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('content');
@@ -87,25 +87,11 @@ class ArticleTest extends TestCase
             'content' => 'Should not create',
         ];
 
-        $response = $this->postJson("/api/article/{$nickname}", $payload);
+        $response = $this->postJson("/api/article", $payload);
 
         $response->assertStatus(401);
     }
 
-    public function test_creating_article_with_invalid_profile_nickname_returns_404()
-    {
-        $user = $this->createUserWithProfile();
-        $invalidNickname = 'nonexistent_nickname';
-
-        $payload = [
-            'title' => 'Title',
-            'content' => 'Content',
-        ];
-
-        $response = $this->actingAs($user)->postJson("/api/article/{$invalidNickname}", $payload);
-
-        $response->assertStatus(404);
-    }
 
     public function test_guest_can_view_article()
     {

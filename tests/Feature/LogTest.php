@@ -44,7 +44,7 @@ class LogTest extends TestCase
             'tags' => 'test,article',
         ];
 
-        $response = $this->postJson("/api/article/{$this->profile->nickname}", $payload);
+        $response = $this->postJson("/api/article", $payload);
         $response->assertStatus(201);
 
         $article = Article::first();

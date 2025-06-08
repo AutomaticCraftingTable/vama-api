@@ -20,15 +20,19 @@ class ArticleController extends Controller
 
     public function showArticle($id)
     {
-        $article = Article::with(['profile', 'comments.profile'])->find($id);
+        $article = Article::with([
+            'profile',
+            'comments.user.profile',
+        ])->find($id);
 
         if (! $article) {
             return response()->json(['message' => 'Article not found'], 404);
         }
 
         $authorProfile = $article->profile;
+
         $comments = $article->comments->map(function ($comment) {
-            $commentProfile = $comment->profile;
+            $commentProfile = $comment->user?->profile;
 
             return [
                 'id' => $comment->id,
@@ -38,7 +42,7 @@ class ArticleController extends Controller
                 'banned_at' => optional($comment->banned_at)?->format('Y-m-d\TH:i:s.v\Z'),
                 'created_at' => $comment->created_at->format('Y-m-d\TH:i:s.v\Z'),
                 'updated_at' => $comment->updated_at->format('Y-m-d\TH:i:s.v\Z'),
-                'logo' => optional($commentProfile)->logo ?? 'string',
+                'logo' => $commentProfile?->logo ?? 'string',
                 'likes' => $comment->likes ?? 0,
             ];
         });
@@ -79,7 +83,8 @@ class ArticleController extends Controller
         ]);
     }
 
-    public function createArticle(Request $request, string $nickname)
+
+    public function createArticle(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -89,14 +94,10 @@ class ArticleController extends Controller
 
         $user = Auth::user();
 
-        $profile = Profile::where('nickname', $nickname)->first();
+        $profile = Profile::where('user_id', $user->id)->first();
 
         if (! $profile) {
             return response()->json(['message' => 'Profile not found'], 404);
-        }
-
-        if ($profile->user_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized to post under this profile'], 403);
         }
 
         $article = Article::create([

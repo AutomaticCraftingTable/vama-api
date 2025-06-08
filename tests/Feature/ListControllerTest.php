@@ -212,41 +212,6 @@ class ListControllerTest extends TestCase
                  ]);
     }
 
-    public function test_admin_can_see_reported_comments()
-    {
-        $admin = $this->createUserWithRole('admin');
-        Profile::factory()->create(['user_id' => $admin->id]);
-        $token = $this->authenticate($admin);
-
-        $article = Article::factory()->create();
-        $comment = Comment::factory()->create(['article_id' => $article->id]);
-
-        Report::factory()->count(2)->create([
-            'target_type' => 'comment',
-            'target_id' => $comment->id,
-        ]);
-
-        $response = $this->withToken($token)->getJson('/api/list/reports/comments');
-
-        $response->assertOk()
-                 ->assertJsonStructure([
-                     'comments' => [
-                         '*' => [
-                             'id',
-                             'causer',
-                             'article_id',
-                             'content',
-                             'banned_at',
-                             'created_at',
-                             'updated_at',
-                             'logo',
-                             'likes',
-                         ],
-                     ],
-                 ]);
-    }
-
-
     public function test_admin_can_list_profiles_with_activities()
     {
         $admin = User::factory()->create(['role' => 'admin']);

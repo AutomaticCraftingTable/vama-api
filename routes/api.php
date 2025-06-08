@@ -20,19 +20,20 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\VerifyEmailNotificationController;
 
 Route::middleware("auth:sanctum")->get("/user", fn (Request $request): JsonResponse => new JsonResponse($request->user()));
+ 
 
-Route::get('/article/{id}', [ArticleController::class, 'showArticle']);
+Route::get('/article/{id}', [ArticleController::class, 'showArticle']);  
 
-Route::get('/home', [HomeController::class, 'home']);
+Route::get('/home', [HomeController::class, 'home']);  
 
-Route::post('/home/search', [HomeController::class, 'search']);
+Route::post('/home/search', [HomeController::class, 'search']);  
 
 Route::prefix('auth')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login']);  
 
-    Route::post('register', [AuthController::class, 'register']);
+    Route::post('register', [AuthController::class, 'register']);  
 
-    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');  
 });
 
 
@@ -41,93 +42,93 @@ Route::get('/auth/redirect/google', [AuthController::class, 'redirectToGoogle'])
 Route::get('/auth/callback/google', [AuthController::class, 'handleGoogleCallback']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::patch('/account', [UserController::class, 'updatePassword']);
+    Route::patch('/account', [UserController::class, 'updatePassword']);  
 
-    Route::delete('/account', [UserController::class, 'destroyAccount']);
+    Route::delete('/account', [UserController::class, 'destroyAccount']);  
 
-    Route::delete('/profile', [ProfileController::class, 'destroy']);
+    Route::delete('/profile', [ProfileController::class, 'destroy']);  
 
-    Route::delete('/article/{id}', [ArticleController::class, 'destroyArticle']);
+    Route::delete('/article/{id}', [ArticleController::class, 'destroyArticle']);  
 
-    Route::delete('/comment/{id}', [CommentController::class, 'destroyComment']);
+    Route::delete('/comment/{id}', [CommentController::class, 'destroyComment']);  
 });
 
 
 
 Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
     Route::middleware(['checkRole:superadmin'])->group(function () {
-        Route::get('/activities/admins', [ActivityController::class, 'allAdminActivities']);
+        Route::get('/activities/admins', [ActivityController::class, 'allAdminActivities']);  
     });
     Route::middleware(['checkRole:admin,superadmin'])->group(function () {
-        Route::delete('/account/{id}', [UserController::class, 'destroyUserAccount']);
+        Route::delete('/account/{id}', [UserController::class, 'destroyUserAccount']);  
 
-        Route::post('/account/{id}/ban', [UserController::class, 'banUser']);
+        Route::post('/account/{id}/ban', [UserController::class, 'banUser']);  
 
-        Route::delete('/account/{id}/ban', [UserController::class, 'unbanUser']);
+        Route::delete('/account/{id}/ban', [UserController::class, 'unbanUser']);  
 
-        Route::post('/article/{id}/ban', [ArticleController::class, 'banArticle']);
+        Route::post('/article/{id}/ban', [ArticleController::class, 'banArticle']);  
 
-        Route::delete('/article/{id}/ban', [ArticleController::class, 'unbanArticle']);
+        Route::delete('/article/{id}/ban', [ArticleController::class, 'unbanArticle']);  
 
-        Route::post('/comment/{id}/ban', [CommentController::class, 'banComment']);
+        Route::post('/comment/{id}/ban', [CommentController::class, 'banComment']);  
 
-        Route::delete('/comment/{id}/ban', [CommentController::class, 'unbanComment']);
+        Route::delete('/comment/{id}/ban', [CommentController::class, 'unbanComment']);  
 
-        Route::post('/account/{id}/role', [UserController::class, 'changeUserRole']);
+        Route::post('/account/{id}/role', [UserController::class, 'changeUserRole']);  
 
-        Route::delete('/{type}/{id}/report', [ReportController::class, 'deleteReports'])
+        Route::delete('/{type}/{id}/report', [ReportController::class, 'deleteReports'])  
             ->where('type', 'article|comment|profile');
 
-        Route::get('/list/moderators', [ListController::class, 'moderators']);
+        Route::get('/list/moderators', [ListController::class, 'moderators']);  
 
-        Route::get('/list/notes', [ListController::class, 'notes']);
+        Route::get('/list/notes', [ListController::class, 'notes']);  
 
-        Route::get('/list/reports/articles', [ListController::class, 'reportedArticles']);
+        Route::get('/list/reports/articles', [ListController::class, 'reportedArticles']); 
 
-        Route::get('/list/reports/profiles', [ListController::class, 'reportedProfiles']);
+        Route::get('/list/reports/profiles', [ListController::class, 'reportedProfiles']); 
 
         Route::get('/list/reports/comments', [ListController::class, 'reportedComments']);
 
-        Route::get('/list/profiles', [ListController::class, 'profiles']);
+        Route::get('/list/profiles', [ListController::class, 'profiles']);  
 
-        Route::get('/activities', [ActivityController::class, 'myActivity']);
+        Route::get('/activities', [ActivityController::class, 'myActivity']);  
     });
 
     Route::middleware(['checkRole:admin,superadmin,moderator'])->group(function () {
-        Route::post('/article/{id}/note', [NoteController::class, 'createNote']);
+        Route::post('/article/{id}/note', [NoteController::class, 'createNote']);  
 
-        Route::delete('/note/{id}', [NoteController::class, 'deleteNote']);
+        Route::delete('/note/{id}', [NoteController::class, 'deleteNote']);  
     });
 
-    Route::post('/profile', [ProfileController::class, 'store']);
+    Route::post('/profile', [ProfileController::class, 'store']);  
 
-    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::put('/profile', [ProfileController::class, 'update']);  
 
-    Route::post('/article/{id}', [ArticleController::class, 'createArticle']);
+    Route::post('/article', [ArticleController::class, 'createArticle']);  
 
-    Route::post('/article/{id}/comment', [CommentController::class, 'createComment']);
+    Route::post('/article/{id}/comment', [CommentController::class, 'createComment']);  
 
-    Route::post('/article/{id}/like', [LikeReactionController::class, 'like']);
+    Route::post('/article/{id}/like', [LikeReactionController::class, 'like']);  
 
-    Route::delete('/article/{id}/like', [LikeReactionController::class, 'unlike']);
+    Route::delete('/article/{id}/like', [LikeReactionController::class, 'unlike']);  
 
-    Route::post('/profile/{nickname}/subscribe', [ProfileController::class, 'subscribe']);
+    Route::post('/profile/{nickname}/subscribe', [ProfileController::class, 'subscribe']); 
 
-    Route::delete('/profile/{nickname}/subscribe', [ProfileController::class, 'unsubscribe']);
+    Route::delete('/profile/{nickname}/subscribe', [ProfileController::class, 'unsubscribe']);  
 
-    Route::post('/article/{id}/report', [ReportController::class, 'reportArticle']);
+    Route::post('/article/{id}/report', [ReportController::class, 'reportArticle']); 
 
-    Route::post('/comment/{id}/report', [ReportController::class, 'reportComment']);
+    Route::post('/comment/{id}/report', [ReportController::class, 'reportComment']);  
 
-    Route::post('/profile/{nickname}/report', [ReportController::class, 'reportProfile']);
+    Route::post('/profile/{nickname}/report', [ReportController::class, 'reportProfile']); 
 
-    Route::get('/profile', [ProfileController::class, 'me']);
+    Route::get('/profile', [ProfileController::class, 'me']);  
 
-    Route::get('/profile/{nickname}', [ProfileController::class, 'show']);
+    Route::get('/profile/{nickname}', [ProfileController::class, 'show']);  
 
-    Route::get('/home/subscriptions', [HomeController::class, 'subscriptions']);
+    Route::get('/home/subscriptions', [HomeController::class, 'subscriptions']);  
 
-    Route::get('/home/liked', [HomeController::class, 'likedArticles']);
+    Route::get('/home/liked', [HomeController::class, 'likedArticles']);  
 });
 
 
