@@ -29,18 +29,24 @@ class ArticleController extends Controller
         $authorProfile = $article->profile;
 
         $comments = $article->comments->map(function ($comment) {
-            $commentProfile = $comment->user?->profile;
+            $causerProfile = $comment->user?->profile;
 
             return [
                 'id' => $comment->id,
-                'causer' => $comment->causer,
+                'causer' => $causerProfile ? [
+                    'nickname' => $causerProfile->nickname,
+                    'account_id' => $causerProfile->user_id,
+                    'description' => $causerProfile->description,
+                    'logo' => $causerProfile->logo,
+                    'followers' => $causerProfile->followers()->count(),
+                    'created_at' => $causerProfile->created_at->format('Y-m-d\TH:i:s.v\Z'),
+                    'updated_at' => $causerProfile->updated_at->format('Y-m-d\TH:i:s.v\Z'),
+                ] : null,
                 'article_id' => $comment->article_id,
                 'content' => $comment->content,
                 'banned_at' => optional($comment->banned_at)?->format('Y-m-d\TH:i:s.v\Z'),
                 'created_at' => $comment->created_at->format('Y-m-d\TH:i:s.v\Z'),
                 'updated_at' => $comment->updated_at->format('Y-m-d\TH:i:s.v\Z'),
-                'logo' => $commentProfile?->logo ?? 'string',
-                'likes' => $comment->likes ?? 0,
             ];
         });
 
