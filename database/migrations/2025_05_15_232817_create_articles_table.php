@@ -16,6 +16,7 @@ return new class () extends Migration {
             $table->string('title');
             $table->text('content');
             $table->text('tags')->nullable();
+            $table->string('thumbnail')->nullable();
             $table->timestamp('banned_at')->nullable();
             $table->timestamps();
         });

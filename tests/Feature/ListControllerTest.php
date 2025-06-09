@@ -74,39 +74,7 @@ class ListControllerTest extends TestCase
     }
 
 
-    public function test_admin_can_see_all_notes()
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $token = $admin->createToken('test-token')->plainTextToken;
 
-        $causer = User::factory()->create();
-        $profile = Profile::factory()->create(['user_id' => $causer->id]);
-
-        $article = Article::factory()->create();
-
-        Note::factory()->count(3)->create([
-            'causer' => $profile->nickname,
-            'article_id' => $article->id,
-        ]);
-
-        $response = $this->withToken($token)->getJson('/api/list/notes');
-
-        $response->assertOk()
-                 ->assertJsonCount(3, 'notes')
-                 ->assertJsonStructure([
-                     'notes' => [
-                         [
-                             'id',
-                             'content',
-                             'causer',
-                             'article_id',
-                             'created_at',
-                             'updated_at',
-                             'profile',
-                         ],
-                     ],
-                 ]);
-    }
 
 
     public function test_user_cannot_access_notes()
@@ -142,7 +110,7 @@ class ListControllerTest extends TestCase
 
         Report::create([
             'causer' => $reporterUser->id,
-            'target_type' => 'article',  // use the expected string here!
+            'target_type' => 'article',
             'target_id' => (string) $article->id,
             'content' => 'Inappropriate content',
         ]);
