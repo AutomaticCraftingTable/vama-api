@@ -184,6 +184,39 @@ class ArticleController extends Controller
         return response()->json(['success' => 'Article has been unbanned.']);
     }
 
+    public function updateArticle(Request $request, $id)
+    {
+        $article = Article::findOrFail($id);
+        $user = Auth::user();
+        $profile = Profile::where('user_id', $user->id)->first();
+        $isAdmin = in_array($user->role, ['admin', 'superadmin']);
+        $isAuthor = $profile && $article->author === $profile->nickname;
+
+        if (! $isAdmin && ! $isAuthor) {
+            return response()->json(['error' => 'Forbidden.'], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'content' => 'sometimes|required|string',
+            'tags' => 'nullable|string',
+            'thumbnail' => 'nullable|string',
+        ]);
+
+        $article->update($validated);
+
+        $this->logger->log(
+            $article,
+            'Article updated',
+            $validated,
+            $user,
+            'articles'
+        );
+
+        return response()->json($article);
+    }
+
+
     public function destroyArticle($id)
     {
         $user = Auth::user();
