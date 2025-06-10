@@ -32,7 +32,7 @@ services:
       - "traefik.http.routers.vama-api.entrypoints=web"
       - "traefik.http.services.vama-api.loadbalancer.server.port=80"
     ports:
-      - "80:80"  # Required if you want to access directly via IP too
+      - "80:80" 
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
