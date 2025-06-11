@@ -105,7 +105,7 @@ Route::middleware(['auth:sanctum', 'canAccessContent'])->group(function () {
     Route::put('/profile', [ProfileController::class, 'update']);
 
     Route::post('/article', [ArticleController::class, 'createArticle']);
-    
+
     Route::put('/article/{id}', [ArticleController::class, 'updateArticle']);
 
     Route::post('/article/{id}/comment', [CommentController::class, 'createComment']);

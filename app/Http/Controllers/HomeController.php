@@ -9,7 +9,7 @@ use App\Models\LikeReaction;
 
 class HomeController extends Controller
 {
-    public function home(Request $request)
+    public function home()
     {
         $articles = Article::with([
                 'profile:user_id,nickname,logo,description,created_at,updated_at',
@@ -182,7 +182,7 @@ class HomeController extends Controller
 
         $articles = Article::with([
                 'profile:user_id,nickname,logo,description,created_at,updated_at',
-                'comments.user:id,nickname,logo',
+                'comments.user.profile:user_id,nickname,logo',
             ])
             ->withCount('likes')
             ->where('title', 'ILIKE', "%{$query}%")
@@ -207,16 +207,17 @@ class HomeController extends Controller
                     'tags' => $article->tags,
                     'likes' => $article->likes_count,
                     'comments' => $article->comments->map(function ($comment) {
-                        $user = $comment->user;
+                        $profile = optional($comment->user)->profile;
+
                         return [
                             'id' => $comment->id,
-                            'causer' => $user->nickname ?? 'unknown',
+                            'causer' => $profile->nickname ?? 'unknown',
                             'article_id' => $comment->article_id,
                             'content' => $comment->content,
                             'banned_at' => $comment->banned_at,
                             'created_at' => $comment->created_at,
                             'updated_at' => $comment->updated_at,
-                            'logo' => $user->logo ?? null,
+                            'logo' => $profile->logo ?? null,
                         ];
                     }),
                     'thumbnail' => $article->thumbnail,
