@@ -24,7 +24,7 @@ class ActivityController extends Controller
 
     public function allAdminActivities(): JsonResponse
     {
-        $adminIds = User::whereIn('role', ['admin'])->pluck('id');
+        $adminIds = User::whereIn('role', ['admin', 'superadmin'])->pluck('id');
 
         $activities = Activity::whereIn('causer_id', $adminIds)
             ->where('causer_type', User::class)
@@ -34,6 +34,7 @@ class ActivityController extends Controller
 
         return response()->json($activities);
     }
+
 
     private function formatActivity(Activity $activity): array
     {
